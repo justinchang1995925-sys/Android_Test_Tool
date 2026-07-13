@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+build/
+dist/
+captures/
+stats_exports/
+chart_exports/
+monkey_logs/
+android_tool.json
+*.spec

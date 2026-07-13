@@ -1,0 +1,1988 @@
+<!doctype html>
+<html lang="zh-CN" class="theme-dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>内存 / CPU 曲线</title>
+  <link rel="stylesheet" href="/theme.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      background-image: var(--bg-accent);
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 24px 32px;
+      background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 45%, #7c3aed 100%);
+      color: #fff;
+      box-shadow: var(--shadow-lg);
+    }
+
+    h1, h2 {
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    h2 {
+      font-size: 1.05rem;
+    }
+
+    .header-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #subtitle {
+      margin-top: 6px;
+      font-size: 0.875rem;
+      opacity: 0.88;
+    }
+
+    .sample-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .sample-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .sample-status.sampling {
+      color: #86efac;
+      border-color: rgba(134, 239, 172, 0.45);
+    }
+
+    .sample-status.sampling .sample-dot {
+      animation: sample-pulse 1.4s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(134, 239, 172, 0.8);
+    }
+
+    .sample-status.paused {
+      color: #fcd34d;
+      border-color: rgba(252, 211, 77, 0.45);
+    }
+
+    .sample-status.stopped {
+      color: #94a3b8;
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+
+    @keyframes sample-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.82); }
+    }
+
+    .header-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s;
+    }
+
+    .header-link:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #themeToggle {
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .alert-banner {
+      width: min(1400px, calc(100% - 32px));
+      margin: 14px auto 0;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(248, 113, 113, 0.5);
+      background: rgba(248, 113, 113, 0.12);
+      color: #fecaca;
+      font-size: 0.875rem;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+    }
+
+    .alert-banner[hidden] {
+      display: none;
+    }
+
+    main {
+      width: min(1400px, calc(100% - 32px));
+      margin: 20px auto 36px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .item {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      border-left: 3px solid var(--primary);
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .value {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .chart-card {
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .toolbar-title h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-title h2::before {
+      content: "";
+      width: 4px;
+      height: 1.1em;
+      border-radius: 2px;
+      background: var(--chart-accent, var(--primary));
+    }
+
+    #memoryPanel .toolbar-title h2::before {
+      background: var(--memory);
+    }
+
+    #cpuPanel .toolbar-title h2::before {
+      background: var(--cpu);
+    }
+
+    .latest-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .latest-badge.ok {
+      background: rgba(34, 197, 94, 0.12);
+      color: #86efac;
+    }
+
+    .latest-badge.bad {
+      background: rgba(248, 113, 113, 0.12);
+      color: #fca5a5;
+    }
+
+    .latest-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .chart-wrap {
+      position: relative;
+      border-radius: 14px;
+      border: 1px solid var(--chart-border);
+      background: var(--chart-bg);
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 440px;
+      cursor: crosshair;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .legend-swatch {
+      width: 20px;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    .legend-item strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--tooltip-bg);
+      color: #f8fafc;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translate(-50%, -100%);
+      transition: opacity 0.12s;
+      z-index: 10;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .chart-tooltip.visible {
+      opacity: 1;
+    }
+
+    .log-panel .toolbar {
+      margin-bottom: 14px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quality-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .quality-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8125rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .quality-toggle input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+    }
+
+    .hint-inline {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .quality-grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .quality-global-warn {
+      grid-column: 1 / -1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(251, 191, 36, 0.55);
+      background: rgba(251, 191, 36, 0.1);
+      color: #fde68a;
+      font-size: 0.85rem;
+      font-weight: 650;
+    }
+
+    .quality-item {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.35);
+      padding: 12px 12px 10px;
+    }
+
+    .quality-item.ok { border-color: rgba(34, 197, 94, 0.35); }
+    .quality-item.bad { border-color: rgba(248, 113, 113, 0.35); }
+
+    .quality-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .quality-head strong {
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+
+    .quality-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #cbd5e1;
+      background: rgba(148, 163, 184, 0.08);
+      flex-shrink: 0;
+    }
+
+    .quality-tag.ok {
+      border-color: rgba(34, 197, 94, 0.35);
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .quality-tag.bad {
+      border-color: rgba(248, 113, 113, 0.35);
+      color: #fca5a5;
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    .quality-tag.wait {
+      border-color: rgba(148, 163, 184, 0.3);
+      color: #cbd5e1;
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    .quality-meta {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .quality-err {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(248, 113, 113, 0.18);
+      background: rgba(2, 6, 23, 0.55);
+      color: #fecaca;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 120px;
+      overflow: auto;
+    }
+
+    button {
+      min-height: 36px;
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 14px;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #475569;
+      box-shadow: 0 2px 8px rgba(71, 85, 105, 0.2);
+    }
+
+    pre {
+      max-height: 200px;
+      overflow: auto;
+      margin: 0;
+      padding: 14px;
+      background: var(--code);
+      color: #e2e8f0;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 640px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 18px 20px;
+      }
+
+      canvas {
+        height: 320px;
+      }
+    }
+  </style>
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="header-title-row">
+        <h1>内存 / CPU 占用率曲线</h1>
+        <span id="sampleStatus" class="sample-status stopped" aria-live="polite">
+          <span class="sample-dot" aria-hidden="true"></span>
+          <span id="sampleStatusText">等待采样</span>
+        </span>
+      </div>
+      <div id="subtitle">等待采样...</div>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="header-link" id="themeToggle" title="切换浅色/暗色主题">浅色模式</button>
+      <a class="header-link" href="/">← 返回主页面</a>
+    </div>
+  </header>
+
+  <div id="alertBanner" class="alert-banner" role="alert" hidden></div>
+
+  <main>
+    <section class="summary" id="summary"></section>
+
+    <section class="panel" id="qualityPanel">
+      <div class="toolbar">
+        <div class="toolbar-title">
+          <h2>采样质量</h2>
+          <span class="latest-badge" id="qualityBadge">等待采样</span>
+        </div>
+        <div class="toolbar-actions quality-actions">
+          <label class="quality-toggle">
+            <input id="autoSaveToggle" type="checkbox">
+            <span>自动保存</span>
+          </label>
+          <select id="autoSaveInterval">
+            <option value="300000">5 分钟</option>
+            <option value="600000">10 分钟</option>
+            <option value="900000">15 分钟</option>
+          </select>
+          <span class="hint-inline" id="autoSaveStatus">上次自动保存：-</span>
+        </div>
+      </div>
+      <div class="quality-grid" id="qualityGrid"></div>
+    </section>
+
+    <section class="charts">
+      <div id="memoryPanel" class="panel chart-card">
+        <div class="toolbar">
+          <div class="toolbar-title">
+            <h2>内存曲线</h2>
+            <span class="latest-badge" id="memoryLatest">等待数据</span>
+          </div>
+        </div>
+        <div class="chart-wrap" id="memoryWrap">
+          <canvas id="memoryChart"></canvas>
+          <div class="chart-tooltip" id="memoryTooltip"></div>
+        </div>
+        <div class="chart-legend" id="memoryLegend"></div>
+      </div>
+
+      <div id="cpuPanel" class="panel chart-card">
+        <div class="toolbar">
+          <div class="toolbar-title">
+            <h2>CPU 曲线</h2>
+            <span class="latest-badge" id="cpuLatest">等待数据</span>
+          </div>
+        </div>
+        <div class="chart-wrap" id="cpuWrap">
+          <canvas id="cpuChart"></canvas>
+          <div class="chart-tooltip" id="cpuTooltip"></div>
+        </div>
+        <div class="chart-legend" id="cpuLegend"></div>
+      </div>
+    </section>
+
+    <section class="panel log-panel">
+      <div class="toolbar">
+        <h2>采样日志</h2>
+        <div class="toolbar-actions">
+          <button type="button" onclick="togglePolling()" id="toggleButton">暂停</button>
+          <button type="button" onclick="saveExcel()">保存 Excel</button>
+          <button type="button" onclick="exportCharts()">导出曲线 HTML</button>
+          <button type="button" class="secondary" onclick="clearSamples()">清空曲线</button>
+        </div>
+      </div>
+      <pre id="log"></pre>
+    </section>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const devices = params.get("devices") ? params.get("devices").split(",").filter(Boolean) : [];
+    const memoryMode = params.get("memoryMode") || "app";
+    const memoryTarget = params.get("memoryTarget") || "";
+    const cpuPackage = params.get("cpuPackage") || "";
+    const cpuMode = params.get("cpuMode") || (cpuPackage ? "app" : "none");
+    const showMemoryChart = Boolean(memoryTarget);
+    const showAppCpu = Boolean(cpuPackage) && (cpuMode === "app" || cpuMode === "both");
+    const showTotalCpu = cpuMode === "total" || cpuMode === "both";
+    const showCpuChart = showAppCpu || showTotalCpu;
+    const memoryThreshold = parseNumber(params.get("memoryThreshold"));
+    const cpuThreshold = parseNumber(params.get("cpuThreshold"));
+    const intervalMs = Math.max(1000, Number(params.get("intervalMs") || 2000));
+    const durationSec = parseNumber(params.get("durationSec"));
+    const outputDir = params.get("outputDir") || "";
+    const DEFAULT_MAX_POINTS = 7200;
+    const ABSOLUTE_MAX_POINTS = 50000;
+    const MAX_DISPLAY_POINTS = 2000;
+    const AUTO_SAVE_DEFAULT_INTERVAL_MS = 5 * 60 * 1000;
+    const THRESHOLD_ALERT_COOLDOWN_MS = 60000;
+    const POLL_FAILURE_WARN_THRESHOLD = 3;
+    const POLL_FAILURE_AUTO_PAUSE_THRESHOLD = 10;
+    const autoSaveStorageKey = "android-tool-stats-autosave";
+    const maxPoints = Math.min(
+      ABSOLUTE_MAX_POINTS,
+      Math.max(120, Number(params.get("maxPoints")) || DEFAULT_MAX_POINTS),
+    );
+    let sampleLimit;
+    if (durationSec) {
+      const needed = Math.max(2, Math.ceil((durationSec * 1000) / intervalMs) + 2);
+      sampleLimit = Math.min(needed, ABSOLUTE_MAX_POINTS);
+    } else {
+      sampleLimit = maxPoints;
+    }
+    const series = new Map();
+    const sampleRows = [];
+    let polling = true;
+    let timer = null;
+    let startedAt = 0;
+    let hoverState = null;
+    let hasUnsavedSamples = false;
+    let autoSaveTimer = null;
+    let lastAutoSavedCount = 0;
+    const thresholdAlertCooldown = new Map();
+    let pollFailureStreak = 0;
+    let lastPollSuccessAt = 0;
+    const deviceHealth = new Map();
+
+    let autoSaveEnabled = true;
+    let autoSaveIntervalMs = AUTO_SAVE_DEFAULT_INTERVAL_MS;
+    let lastAutoSavedAt = 0;
+
+    const palette = [
+      { stroke: "#3b82f6", fill: "rgba(59, 130, 246, 0.22)" },
+      { stroke: "#10b981", fill: "rgba(16, 185, 129, 0.22)" },
+      { stroke: "#f59e0b", fill: "rgba(245, 158, 11, 0.22)" },
+      { stroke: "#8b5cf6", fill: "rgba(139, 92, 246, 0.22)" },
+      { stroke: "#06b6d4", fill: "rgba(6, 182, 212, 0.22)" },
+      { stroke: "#ec4899", fill: "rgba(236, 72, 153, 0.22)" },
+    ];
+
+    const chartLayout = {
+      padding: { top: 28, right: 24, bottom: 44, left: 58 },
+      gridLines: 5,
+    };
+    function parseNumber(value) {
+      if (value === null || value === "") return null;
+      const number = Number(value);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function syncUnsavedState() {
+      hasUnsavedSamples = sampleRows.length > 0;
+    }
+
+    function updateSampleStatus() {
+      const el = document.getElementById("sampleStatus");
+      const text = document.getElementById("sampleStatusText");
+      const count = sampleRows.length;
+      const countLabel = count ? ` · ${count}/${sampleLimit} 点` : "";
+      if (!devices.length) {
+        el.className = "sample-status stopped";
+        text.textContent = "未选择设备";
+        return;
+      }
+      const toggleButton = document.getElementById("toggleButton");
+      if (toggleButton.disabled) {
+        el.className = "sample-status stopped";
+        text.textContent = (durationSec ? "采样已结束" : "采样已停止") + countLabel;
+        return;
+      }
+      if (polling) {
+        el.className = "sample-status sampling";
+        text.textContent = `采样中${countLabel}`;
+        return;
+      }
+      el.className = "sample-status paused";
+      text.textContent = `已暂停${countLabel}`;
+    }
+
+    window.addEventListener("beforeunload", event => {
+      if (!hasUnsavedSamples) return;
+      event.preventDefault();
+      event.returnValue = "仍有未导出的采样数据，确定要离开吗？";
+    });
+
+    function loadAutoSaveSettings() {
+      try {
+        const raw = localStorage.getItem(autoSaveStorageKey);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (typeof data.enabled === "boolean") autoSaveEnabled = data.enabled;
+        if (typeof data.intervalMs === "number" && Number.isFinite(data.intervalMs)) autoSaveIntervalMs = data.intervalMs;
+      } catch {
+        // ignore
+      }
+    }
+
+    function saveAutoSaveSettings() {
+      try {
+        localStorage.setItem(autoSaveStorageKey, JSON.stringify({
+          enabled: autoSaveEnabled,
+          intervalMs: autoSaveIntervalMs,
+        }));
+      } catch {
+        // ignore
+      }
+    }
+
+    function setAutoSaveUi() {
+      const toggle = document.getElementById("autoSaveToggle");
+      const intervalSelect = document.getElementById("autoSaveInterval");
+      if (!toggle || !intervalSelect) return;
+      toggle.checked = autoSaveEnabled;
+      intervalSelect.value = String(autoSaveIntervalMs);
+      intervalSelect.disabled = !autoSaveEnabled;
+    }
+
+    function updateAutoSaveStatusLabel() {
+      const el = document.getElementById("autoSaveStatus");
+      if (!el) return;
+      if (!autoSaveEnabled) {
+        el.textContent = "自动保存：已关闭";
+        return;
+      }
+      if (!lastAutoSavedAt) {
+        el.textContent = "上次自动保存：-";
+        return;
+      }
+      el.textContent = `上次自动保存：${formatTimeShort(new Date(lastAutoSavedAt))}（${lastAutoSavedCount} 行）`;
+    }
+
+    function restartAutoSaveTimer() {
+      if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+        autoSaveTimer = null;
+      }
+      if (!autoSaveEnabled) return;
+      autoSaveTimer = setInterval(() => {
+        if (!sampleRows.length || sampleRows.length === lastAutoSavedCount) return;
+        saveExcel(true);
+      }, autoSaveIntervalMs);
+    }
+
+    function init() {
+      window.onThemeChanged = drawAll;
+      applyChartVisibility();
+      setupCanvasResize();
+      bindChartHover();
+      loadAutoSaveSettings();
+      setAutoSaveUi();
+      updateAutoSaveStatusLabel();
+      restartAutoSaveTimer();
+      bindAutoSaveControls();
+      if (!devices.length) {
+        log("未选择设备，请返回主页面选择设备后打开曲线。");
+        document.getElementById("subtitle").textContent = "未选择设备";
+        updateSampleStatus();
+        updateQualityPanel();
+        return;
+      }
+      for (const device of devices) {
+        series.set(device, { memory: [], cpu: [], totalCpu: [] });
+        deviceHealth.set(device, {
+          lastOkAt: 0,
+          lastErrAt: 0,
+          lastErr: "",
+          okCount: 0,
+          failCount: 0,
+        });
+      }
+      startedAt = Date.now();
+      renderSummary();
+      updateSampleStatus();
+      updateQualityPanel();
+      poll();
+      timer = setInterval(() => {
+        if (!polling) return;
+        if (durationSec && Date.now() - startedAt >= durationSec * 1000) {
+          stopPolling("已达到抓取总时长，采样自动停止。");
+          return;
+        }
+        poll();
+      }, intervalMs);
+    }
+
+    function bindAutoSaveControls() {
+      const toggle = document.getElementById("autoSaveToggle");
+      const intervalSelect = document.getElementById("autoSaveInterval");
+      if (toggle) {
+        toggle.addEventListener("change", () => {
+          autoSaveEnabled = Boolean(toggle.checked);
+          saveAutoSaveSettings();
+          setAutoSaveUi();
+          updateAutoSaveStatusLabel();
+          restartAutoSaveTimer();
+          renderSummary();
+        });
+      }
+      if (intervalSelect) {
+        intervalSelect.addEventListener("change", () => {
+          const ms = Number(intervalSelect.value);
+          if (!Number.isFinite(ms) || ms <= 0) return;
+          autoSaveIntervalMs = ms;
+          saveAutoSaveSettings();
+          updateAutoSaveStatusLabel();
+          restartAutoSaveTimer();
+          renderSummary();
+        });
+      }
+    }
+
+    function applyChartVisibility() {
+      document.getElementById("memoryPanel").hidden = !showMemoryChart;
+      document.getElementById("cpuPanel").hidden = !showCpuChart;
+    }
+
+    function setupCanvasResize() {
+      const canvases = [];
+      if (showMemoryChart) canvases.push("memoryChart");
+      if (showCpuChart) canvases.push("cpuChart");
+      const resize = () => {
+        for (const id of canvases) {
+          fitCanvas(document.getElementById(id));
+        }
+        drawAll();
+      };
+      window.addEventListener("resize", resize);
+      resize();
+    }
+
+    function fitCanvas(canvas) {
+      const wrap = canvas.parentElement;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = wrap.clientWidth;
+      const height = parseInt(getComputedStyle(canvas).height, 10) || 440;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas._logical = { width, height };
+    }
+
+    function bindChartHover() {
+      const configs = [];
+      if (showMemoryChart) {
+        configs.push({
+          canvasId: "memoryChart",
+          tooltipId: "memoryTooltip",
+          wrapId: "memoryWrap",
+          type: "memory",
+        });
+      }
+      if (showCpuChart) {
+        configs.push({
+          canvasId: "cpuChart",
+          tooltipId: "cpuTooltip",
+          wrapId: "cpuWrap",
+          type: "cpu",
+        });
+      }
+      for (const cfg of configs) {
+        const canvas = document.getElementById(cfg.canvasId);
+        const tooltip = document.getElementById(cfg.tooltipId);
+        canvas.addEventListener("mousemove", event => onChartHover(event, canvas, tooltip, cfg.type));
+        canvas.addEventListener("mouseleave", () => {
+          hoverState = null;
+          tooltip.classList.remove("visible");
+          drawAll();
+        });
+      }
+    }
+
+    function renderSummary() {
+      const items = [
+        ["设备", devices.join(", ")],
+        ["内存目标", memoryTarget ? `${memoryMode === "process" ? "系统进程" : "APP"}：${memoryTarget}` : "未启用"],
+        ["CPU 目标", cpuSummary()],
+        ["阈值", `内存 ${memoryThreshold ?? "-"} MB / CPU ${cpuThreshold ?? "-"}%`],
+        ["抓取设置", `间隔 ${intervalMs / 1000} 秒 / 总时长 ${durationSec ? `${durationSec} 秒` : "持续抓取"}`],
+        ["Excel 保存路径", outputDir || "默认 stats_exports"],
+        ["自动保存", autoSaveEnabled ? `每 ${Math.round(autoSaveIntervalMs / 60000)} 分钟（有新增数据时）` : "已关闭"],
+        ["曲线绘制", `超过 ${MAX_DISPLAY_POINTS} 点时自动降采样显示（导出保留全量）`],
+      ];
+      document.getElementById("summary").innerHTML = items.map(([label, value]) => `
+        <div class="item">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+        </div>
+      `).join("");
+      const durationHint = durationSec
+        ? `总时长 ${durationSec}s，约 ${sampleLimit} 个点`
+        : `持续抓取，最多保留 ${sampleLimit} 个点（约 ${formatDurationHint(sampleLimit * intervalMs / 1000)}）`;
+      document.getElementById("subtitle").textContent = `采样间隔 ${intervalMs / 1000}s，${durationHint}`;
+    }
+
+    function cpuSummary() {
+      if (showAppCpu && showTotalCpu) return `APP：${cpuPackage} / CPU 总占用率`;
+      if (showAppCpu) return `APP：${cpuPackage}`;
+      if (showTotalCpu) return "CPU 总占用率";
+      return "未启用";
+    }
+
+    async function poll() {
+      try {
+        const response = await fetch("/api/stats-sample", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ devices, memoryMode, memoryTarget, cpuPackage, cpuMode }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+          throw new Error(data.error || "采样失败");
+        }
+        pollFailureStreak = 0;
+        lastPollSuccessAt = Date.now();
+        const now = new Date();
+        for (const item of data.results || []) {
+          const current = series.get(item.device);
+          if (!current) continue;
+          if (typeof item.memoryMb === "number") pushPoint(current.memory, now, item.memoryMb);
+          if (typeof item.cpuPercent === "number") pushPoint(current.cpu, now, item.cpuPercent);
+          if (typeof item.totalCpuPercent === "number") pushPoint(current.totalCpu, now, item.totalCpuPercent);
+          sampleRows.push({
+            time: formatTime(now),
+            device: item.device,
+            memoryMode,
+            memoryTarget,
+            memoryMb: item.memoryMb,
+            cpuPackage,
+            cpuPercent: item.cpuPercent,
+            totalCpuPercent: item.totalCpuPercent,
+            memoryThreshold,
+            cpuThreshold,
+            intervalSec: intervalMs / 1000,
+            durationSec,
+            ok: item.ok,
+            stderr: item.stderr || "",
+          });
+          updateDeviceHealth(item, now);
+          log(`[${now.toLocaleTimeString()}] ${item.device}: ${item.stdout}${item.stderr ? `\n${item.stderr}` : ""}`);
+        }
+        drawAll();
+        checkThresholdAlerts(data.results || []);
+        syncUnsavedState();
+        updateSampleStatus();
+        updateQualityPanel();
+      } catch (error) {
+        pollFailureStreak += 1;
+        updateQualityPanel(error);
+        if (pollFailureStreak >= POLL_FAILURE_AUTO_PAUSE_THRESHOLD) {
+          stopPolling(`采样连续失败 ${pollFailureStreak} 次，已自动暂停。请检查 ADB/设备连接后再继续。`);
+        }
+        log(`[${new Date().toLocaleTimeString()}] ${error.message}`);
+      }
+    }
+
+    function updateDeviceHealth(item, now) {
+      const health = deviceHealth.get(item.device);
+      if (!health) return;
+      if (item.ok) {
+        health.lastOkAt = now.getTime();
+        health.okCount += 1;
+        return;
+      }
+      health.lastErrAt = now.getTime();
+      health.failCount += 1;
+      health.lastErr = item.stderr || item.stdout || "采样失败";
+    }
+
+    function updateQualityPanel(latestError) {
+      const badge = document.getElementById("qualityBadge");
+      const grid = document.getElementById("qualityGrid");
+      if (!badge || !grid) return;
+
+      const successLabel = lastPollSuccessAt ? formatTimeShort(new Date(lastPollSuccessAt)) : "-";
+      const streakLabel = pollFailureStreak ? `连续失败 ${pollFailureStreak} 次` : "正常";
+      badge.textContent = `最后成功 ${successLabel} · ${streakLabel}`;
+      badge.className = `latest-badge ${pollFailureStreak ? "bad" : "ok"}`;
+
+      const items = [];
+      for (const device of devices) {
+        const health = deviceHealth.get(device) || {};
+        const lastOk = health.lastOkAt ? formatTimeShort(new Date(health.lastOkAt)) : "-";
+        const lastErr = health.lastErrAt ? formatTimeShort(new Date(health.lastErrAt)) : "-";
+        const okCount = Number(health.okCount || 0);
+        const failCount = Number(health.failCount || 0);
+        const status = okCount === 0 && failCount === 0 ? "等待" : (health.lastErrAt > health.lastOkAt ? "异常" : "正常");
+        const cls = status === "异常" ? "bad" : (status === "正常" ? "ok" : "wait");
+        const errText = health.lastErr ? escapeHtml(String(health.lastErr).slice(0, 220)) : "";
+        items.push(`
+          <div class="quality-item ${cls}">
+            <div class="quality-head">
+              <strong>${escapeHtml(device)}</strong>
+              <span class="quality-tag ${cls}">${status}</span>
+            </div>
+            <div class="quality-meta">
+              <span>成功：${okCount}（最近 ${lastOk}）</span>
+              <span>失败：${failCount}（最近 ${lastErr}）</span>
+            </div>
+            ${errText ? `<div class="quality-err">${errText}</div>` : ``}
+          </div>
+        `);
+      }
+
+      const hint = latestError ? `<div class="quality-global-warn">最近错误：${escapeHtml(latestError.message || String(latestError))}</div>` : "";
+      const warn = pollFailureStreak >= POLL_FAILURE_WARN_THRESHOLD
+        ? `<div class="quality-global-warn">提示：采样已连续失败 ${pollFailureStreak} 次，请检查 ADB/设备授权/连接状态。</div>`
+        : "";
+      grid.innerHTML = hint + warn + items.join("");
+    }
+
+    function downsamplePoints(points, maxPoints = MAX_DISPLAY_POINTS) {
+      if (points.length <= maxPoints) return points;
+      const last = points.length - 1;
+      const result = [points[0]];
+      const innerSlots = maxPoints - 2;
+      for (let i = 1; i <= innerSlots; i += 1) {
+        const index = Math.round((i * last) / (innerSlots + 1));
+        result.push(points[index]);
+      }
+      result.push(points[last]);
+      return result;
+    }
+
+    function linesForDisplay(lines) {
+      return lines.map(line => ({
+        ...line,
+        points: downsamplePoints(line.points),
+      }));
+    }
+
+    function shouldShowThresholdAlert(key) {
+      const last = thresholdAlertCooldown.get(key) || 0;
+      if (Date.now() - last < THRESHOLD_ALERT_COOLDOWN_MS) return false;
+      thresholdAlertCooldown.set(key, Date.now());
+      return true;
+    }
+
+    function showThresholdAlert(message) {
+      const banner = document.getElementById("alertBanner");
+      banner.hidden = false;
+      banner.textContent = message;
+      log(`[阈值告警] ${message}`);
+    }
+
+    function checkThresholdAlerts(results) {
+      const messages = [];
+      for (const item of results) {
+        if (!item.ok) continue;
+        if (memoryThreshold !== null && typeof item.memoryMb === "number" && item.memoryMb > memoryThreshold) {
+          const key = `${item.device}:memory`;
+          if (shouldShowThresholdAlert(key)) {
+            messages.push(`${item.device} 内存 ${item.memoryMb.toFixed(1)} MB 超过阈值 ${memoryThreshold} MB`);
+          }
+        }
+        if (cpuThreshold !== null && typeof item.cpuPercent === "number" && item.cpuPercent > cpuThreshold) {
+          const key = `${item.device}:cpu`;
+          if (shouldShowThresholdAlert(key)) {
+            messages.push(`${item.device} APP CPU ${item.cpuPercent.toFixed(1)}% 超过阈值 ${cpuThreshold}%`);
+          }
+        }
+        if (cpuThreshold !== null && typeof item.totalCpuPercent === "number" && item.totalCpuPercent > cpuThreshold) {
+          const key = `${item.device}:totalCpu`;
+          if (shouldShowThresholdAlert(key)) {
+            messages.push(`${item.device} CPU 总占用 ${item.totalCpuPercent.toFixed(1)}% 超过阈值 ${cpuThreshold}%`);
+          }
+        }
+      }
+      if (messages.length) showThresholdAlert(messages.join("；"));
+    }
+
+    function pushPoint(list, time, value) {
+      list.push({ time, value });
+      if (list.length > sampleLimit) list.shift();
+    }
+
+    function drawAll() {
+      if (showMemoryChart) {
+        const lines = buildLines("memory");
+        drawChartScene("memoryChart", lines, memoryThreshold, "MB", "memoryLegend");
+        updateLatestBadge("memoryLatest", lines);
+      }
+      if (showCpuChart) {
+        const lines = buildCpuLines();
+        drawChartScene("cpuChart", lines, cpuThreshold, "%", "cpuLegend");
+        updateLatestBadge("cpuLatest", lines);
+      }
+    }
+
+    function buildLines(key) {
+      const lines = [];
+      let index = 0;
+      for (const [device, data] of series.entries()) {
+        if (!data[key].length) {
+          index += 1;
+          continue;
+        }
+        const color = palette[index % palette.length];
+        lines.push({ label: device, points: data[key], ...color });
+        index += 1;
+      }
+      return lines;
+    }
+
+    function buildCpuLines() {
+      const lines = [];
+      let index = 0;
+      for (const [device, data] of series.entries()) {
+        const base = palette[index % palette.length];
+        if (showAppCpu && data.cpu.length) {
+          lines.push({
+            label: `${device} · APP CPU`,
+            points: data.cpu,
+            stroke: base.stroke,
+            fill: base.fill,
+          });
+        }
+        if (showTotalCpu && data.totalCpu.length) {
+          const alt = palette[(index + 2) % palette.length];
+          lines.push({
+            label: `${device} · CPU 总占用`,
+            points: data.totalCpu,
+            stroke: alt.stroke,
+            fill: alt.fill,
+            dashed: true,
+          });
+        }
+        index += 1;
+      }
+      return lines;
+    }
+
+    function drawChartScene(canvasId, lines, threshold, unit, legendId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      const { width, height } = canvas._logical || { width: canvas.width, height: canvas.height };
+      const pad = chartLayout.padding;
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+      const displayLines = linesForDisplay(lines);
+
+      const allValues = [];
+      for (const line of displayLines) {
+        allValues.push(...line.points.map(p => p.value));
+      }
+      if (threshold !== null) allValues.push(threshold);
+
+      const max = Math.max(1, ...(allValues.length ? allValues : [1])) * 1.12;
+      const min = 0;
+      const scale = { width, height, pad, plotW, plotH, min, max, sampleLimit };
+
+      ctx.clearRect(0, 0, width, height);
+      drawPlotBackground(ctx, scale);
+      drawGridAndAxes(ctx, scale, unit, displayLines);
+      if (threshold !== null) {
+        drawThresholdLine(ctx, threshold, scale, unit);
+      }
+      for (const line of displayLines) {
+        drawSeries(ctx, line.points, line.stroke, line.fill, scale, line.dashed);
+      }
+      if (hoverState && hoverState.canvasId === canvasId) {
+        drawCrosshair(ctx, hoverState, scale);
+      }
+      renderHtmlLegend(legendId, lines, threshold, unit);
+    }
+
+    function drawPlotBackground(ctx, scale) {
+      const { pad, plotW, plotH } = scale;
+      const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+      grad.addColorStop(0, getCss("--chart-fill-top") || "#131c2e");
+      grad.addColorStop(1, getCss("--chart-fill-bottom") || "#0a101c");
+      ctx.fillStyle = grad;
+      ctx.fillRect(pad.left, pad.top, plotW, plotH);
+
+      for (let i = 0; i < chartLayout.gridLines; i += 1) {
+        if (i % 2 === 0) continue;
+        const y0 = pad.top + (plotH * i) / chartLayout.gridLines;
+        const bandH = plotH / chartLayout.gridLines;
+        ctx.fillStyle = getCss("--grid-band") || "rgba(148,163,184,0.06)";
+        ctx.fillRect(pad.left, y0, plotW, bandH);
+      }
+    }
+
+    function drawGridAndAxes(ctx, scale, unit, lines) {
+      const { width, height, pad, plotW, plotH, min, max } = scale;
+      ctx.strokeStyle = getCss("--grid");
+      ctx.fillStyle = getCss("--muted");
+      ctx.lineWidth = 1;
+      ctx.font = "11px Segoe UI, sans-serif";
+
+      for (let i = 0; i <= chartLayout.gridLines; i += 1) {
+        const y = pad.top + (plotH * i) / chartLayout.gridLines;
+        const value = max - ((max - min) * i) / chartLayout.gridLines;
+        ctx.beginPath();
+        ctx.setLineDash(i === chartLayout.gridLines ? [] : [4, 4]);
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText(formatAxisValue(value, unit), pad.left - 10, y);
+      }
+
+      const refPoints = lines.find(l => l.points.length)?.points || [];
+      if (refPoints.length >= 2) {
+        const indices = [0, Math.floor((refPoints.length - 1) / 2), refPoints.length - 1];
+        const unique = [...new Set(indices)];
+        for (const idx of unique) {
+          const x = pointX(idx, scale);
+          const label = formatTimeShort(refPoints[idx].time);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillText(label, x, height - pad.bottom + 10);
+        }
+      } else if (refPoints.length === 1) {
+        ctx.textAlign = "center";
+        ctx.fillText(formatTimeShort(refPoints[0].time), pointX(0, scale), height - pad.bottom + 10);
+      }
+
+      ctx.strokeStyle = getCss("--border");
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, pad.top + plotH);
+      ctx.lineTo(pad.left + plotW, pad.top + plotH);
+      ctx.stroke();
+    }
+
+    function drawThresholdLine(ctx, threshold, scale, unit) {
+      const { pad, plotW, plotH, min, max } = scale;
+      const y = valueY(threshold, scale);
+
+      ctx.fillStyle = getCss("--threshold-soft") || "rgba(239,68,68,0.08)";
+      ctx.fillRect(pad.left, pad.top, plotW, Math.max(0, y - pad.top));
+
+      ctx.strokeStyle = getCss("--threshold");
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(pad.left + plotW, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = getCss("--threshold");
+      ctx.font = "bold 11px Segoe UI, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(`阈值 ${formatAxisValue(threshold, unit)}`, pad.left + plotW - 4, y - 6);
+    }
+
+    function drawSeries(ctx, points, stroke, fill, scale, dashed) {
+      if (!points.length) return;
+      const coords = points.map((p, i) => ({
+        x: pointX(i, scale),
+        y: valueY(p.value, scale),
+      }));
+
+      if (points.length === 1) {
+        ctx.fillStyle = stroke;
+        ctx.beginPath();
+        ctx.arc(coords[0].x, coords[0].y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
+
+      const smooth = buildSmoothPath(coords);
+      const bottom = scale.pad.top + scale.plotH;
+
+      ctx.save();
+      ctx.beginPath();
+      smoothPathTo(ctx, smooth, true);
+      ctx.lineTo(coords[coords.length - 1].x, bottom);
+      ctx.lineTo(coords[0].x, bottom);
+      ctx.closePath();
+      const areaGrad = ctx.createLinearGradient(0, scale.pad.top, 0, bottom);
+      areaGrad.addColorStop(0, fill);
+      areaGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = areaGrad;
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      if (dashed) ctx.setLineDash([10, 6]);
+      ctx.shadowColor = stroke;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      smoothPathTo(ctx, smooth, false);
+      ctx.stroke();
+      ctx.restore();
+
+      const last = coords[coords.length - 1];
+      ctx.fillStyle = stroke;
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = getCss("--point-ring") || "#1e293b";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function buildSmoothPath(coords) {
+      if (coords.length < 2) return coords;
+      const result = [coords[0]];
+      for (let i = 0; i < coords.length - 1; i += 1) {
+        const p0 = coords[Math.max(0, i - 1)];
+        const p1 = coords[i];
+        const p2 = coords[i + 1];
+        const p3 = coords[Math.min(coords.length - 1, i + 2)];
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        result.push({ x: cp1x, y: cp1y, x2: cp2x, y2: cp2y, end: p2 });
+      }
+      return result;
+    }
+
+    function smoothPathTo(ctx, smooth, closeArea) {
+      ctx.moveTo(smooth[0].x, smooth[0].y);
+      for (let i = 1; i < smooth.length; i += 1) {
+        const seg = smooth[i];
+        if (seg.end) {
+          ctx.bezierCurveTo(seg.x, seg.y, seg.x2, seg.y2, seg.end.x, seg.end.y);
+        }
+      }
+    }
+
+    function drawCrosshair(ctx, hover, scale) {
+      const { pad, plotW, plotH } = scale;
+      ctx.save();
+      ctx.strokeStyle = getCss("--muted");
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(hover.x, pad.top);
+      ctx.lineTo(hover.x, pad.top + plotH);
+      ctx.stroke();
+      ctx.restore();
+
+      for (const hit of hover.hits) {
+        ctx.fillStyle = hit.stroke;
+        ctx.beginPath();
+        ctx.arc(hit.x, hit.y, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = getCss("--point-ring") || "#1e293b";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function onChartHover(event, canvas, tooltip, chartType) {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const lines = chartType === "memory" ? buildLines("memory") : buildCpuLines();
+      if (!lines.length) return;
+
+      const scale = buildScaleFromCanvas(canvas, lines, chartType === "memory" ? memoryThreshold : cpuThreshold);
+
+      const hits = [];
+      const rows = [];
+      let hoverTime = null;
+      for (const line of lines) {
+        if (!line.points.length) continue;
+        const pointIndex = nearestPointIndex(line.points, x, scale);
+        const point = line.points[pointIndex];
+        hoverTime = point.time;
+        const px = pointX(pointIndex, scale);
+        const py = valueY(point.value, scale);
+        hits.push({ x: px, y: py, stroke: line.stroke });
+        const unit = chartType === "memory" ? " MB" : "%";
+        rows.push(`${line.label}: ${point.value.toFixed(2)}${unit}`);
+      }
+      if (hoverTime) rows.unshift(formatTimeShort(hoverTime));
+
+      hoverState = { canvasId: canvas.id, x: hits[0]?.x || x, hits };
+      tooltip.innerHTML = rows.map(r => `<div>${escapeHtml(r)}</div>`).join("");
+      tooltip.classList.add("visible");
+      tooltip.style.left = `${event.clientX - canvas.parentElement.getBoundingClientRect().left}px`;
+      tooltip.style.top = `${event.clientY - canvas.parentElement.getBoundingClientRect().top - 12}px`;
+      drawAll();
+    }
+
+    function buildScaleFromCanvas(canvas, lines, threshold) {
+      const { width, height } = canvas._logical || { width: 900, height: 440 };
+      const pad = chartLayout.padding;
+      const allValues = [];
+      for (const line of lines) {
+        allValues.push(...line.points.map(p => p.value));
+      }
+      if (threshold !== null) allValues.push(threshold);
+      const max = Math.max(1, ...(allValues.length ? allValues : [1])) * 1.12;
+      return {
+        width,
+        height,
+        pad,
+        plotW: width - pad.left - pad.right,
+        plotH: height - pad.top - pad.bottom,
+        min: 0,
+        max,
+        sampleLimit,
+      };
+    }
+
+    function pointX(index, scale) {
+      return scale.pad.left + (scale.plotW * index) / Math.max(1, sampleLimit - 1);
+    }
+
+    function nearestPointIndex(points, mouseX, scale) {
+      let bestIndex = 0;
+      let bestDistance = Infinity;
+      for (let i = 0; i < points.length; i += 1) {
+        const distance = Math.abs(pointX(i, scale) - mouseX);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = i;
+        }
+      }
+      return bestIndex;
+    }
+
+    function valueY(value, scale) {
+      const { pad, plotH, min, max } = scale;
+      return pad.top + plotH - ((value - min) / (max - min)) * plotH;
+    }
+
+    function formatAxisValue(value, unit) {
+      if (unit === "MB" && value >= 1024) return `${(value / 1024).toFixed(1)}G`;
+      return `${value.toFixed(value >= 100 ? 0 : 1)}${unit === "%" ? "%" : ""}`;
+    }
+
+    function formatDurationHint(totalSec) {
+      const sec = Math.round(totalSec);
+      if (sec < 60) return `${sec} 秒`;
+      if (sec < 3600) return `${Math.round(sec / 60)} 分钟`;
+      const hours = Math.floor(sec / 3600);
+      const mins = Math.round((sec % 3600) / 60);
+      return mins ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`;
+    }
+
+    function formatTimeShort(date) {
+      const pad = v => String(v).padStart(2, "0");
+      return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function renderHtmlLegend(legendId, lines, threshold, unit) {
+      const el = document.getElementById(legendId);
+      const items = lines.map(line => `
+        <span class="legend-item">
+          <span class="legend-swatch" style="background:${line.stroke}"></span>
+          <strong>${escapeHtml(line.label)}</strong>
+        </span>
+      `);
+      if (threshold !== null) {
+        items.push(`
+          <span class="legend-item">
+            <span class="legend-swatch" style="background:var(--threshold)"></span>
+            <strong>阈值 ${threshold}${unit}</strong>
+          </span>
+        `);
+      }
+      el.innerHTML = items.join("") || '<span class="legend-item">暂无数据</span>';
+    }
+
+    function updateLatestBadge(id, lines) {
+      const parts = [];
+      for (const line of lines) {
+        const latest = line.points[line.points.length - 1];
+        if (latest) {
+          const unit = id === "memoryLatest" ? " MB" : "%";
+          parts.push(`${line.label.split(" · ")[0]}: ${latest.value.toFixed(2)}${unit}`);
+        }
+      }
+      const el = document.getElementById(id);
+      el.textContent = parts.join(" · ") || "等待数据";
+    }
+
+    function togglePolling() {
+      polling = !polling;
+      document.getElementById("toggleButton").textContent = polling ? "暂停" : "继续";
+      updateSampleStatus();
+    }
+
+    function stopPolling(message) {
+      polling = false;
+      if (timer) clearInterval(timer);
+      document.getElementById("toggleButton").textContent = "已停止";
+      document.getElementById("toggleButton").disabled = true;
+      updateSampleStatus();
+      log(message);
+    }
+
+    function clearSamples() {
+      for (const data of series.values()) {
+        data.memory = [];
+        data.cpu = [];
+        data.totalCpu = [];
+      }
+      sampleRows.length = 0;
+      hoverState = null;
+      document.getElementById("log").textContent = "";
+      drawAll();
+      syncUnsavedState();
+      updateSampleStatus();
+    }
+
+    async function saveExcel(isAuto = false) {
+      if (!sampleRows.length) {
+        if (!isAuto) log("没有可保存的采样数据。");
+        return;
+      }
+      const filename = `android_stats_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`;
+      try {
+        const response = await fetch("/api/stats-save-excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ outputDir, filename, rows: sampleRows }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+          throw new Error(data.error || "保存 Excel 失败");
+        }
+        const prefix = isAuto ? "[自动保存]" : "";
+        log(`${prefix}${data.message}，共 ${data.rows} 条数据。`);
+        lastAutoSavedCount = sampleRows.length;
+        if (isAuto) {
+          lastAutoSavedAt = Date.now();
+          updateAutoSaveStatusLabel();
+        }
+        if (!isAuto) hasUnsavedSamples = false;
+      } catch (error) {
+        log(`${isAuto ? "[自动保存] " : ""}保存 Excel 失败：${error.message}`);
+      }
+    }
+
+    let chartExportRuntime = "";
+
+    async function loadChartExportRuntime() {
+      if (chartExportRuntime) return chartExportRuntime;
+      const response = await fetch("/chart-export.js");
+      if (!response.ok) {
+        throw new Error("无法加载曲线导出脚本，请重启 python app.py 后重试。");
+      }
+      chartExportRuntime = await response.text();
+      return chartExportRuntime;
+    }
+
+    function serializeExportLines(lines) {
+      return lines.map(line => ({
+        label: line.label,
+        stroke: line.stroke,
+        fill: line.fill,
+        dashed: Boolean(line.dashed),
+        points: line.points.map(point => ({
+          value: point.value,
+          time: point.time instanceof Date ? point.time.toISOString() : point.time,
+        })),
+      }));
+    }
+
+    function escapeInlineScript(source) {
+      return String(source).replace(/<\/script/gi, "<\\/script");
+    }
+
+    function buildCombinedChartHtml(chartConfigs, runtimeScript, pageTitle, pageSubtitle) {
+      const configsJson = JSON.stringify(chartConfigs.map(cfg => ({
+        ...cfg,
+        canvasId: cfg.canvasId,
+        tooltipId: cfg.tooltipId,
+        legendId: cfg.legendId,
+      }))).replace(/</g, "\\u003c");
+      const safeRuntime = escapeInlineScript(runtimeScript);
+      const tabs = chartConfigs.map((cfg, index) => `
+        <button type="button" class="tab-btn${index === 0 ? " active" : ""}" data-tab="${cfg.tabId}">${escapeHtml(cfg.tabLabel)}</button>
+      `).join("");
+      const panels = chartConfigs.map((cfg, index) => `
+        <section class="tab-panel${index === 0 ? " active" : ""}" id="panel-${cfg.tabId}" data-tab="${cfg.tabId}">
+          <div class="chart-wrap">
+            <canvas id="${cfg.canvasId}"></canvas>
+            <div id="${cfg.tooltipId}" class="tooltip"></div>
+          </div>
+          <div id="${cfg.legendId}" class="legend"></div>
+        </section>
+      `).join("");
+      return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(pageTitle)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #060b14;
+      color: #e2e8f0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.5;
+    }
+    header {
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 45%, #7c3aed 100%);
+      color: #fff;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+    header h1 { margin: 0 0 8px; font-size: 1.25rem; }
+    header p { margin: 0; opacity: 0.9; font-size: 0.875rem; }
+    main { width: min(1200px, calc(100% - 32px)); margin: 20px auto 32px; }
+    .panel {
+      background: #0f172a;
+      border: 1px solid rgba(51, 65, 85, 0.75);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tab-btn {
+      border: 1px solid rgba(71, 85, 105, 0.75);
+      background: rgba(15, 23, 42, 0.9);
+      color: #94a3b8;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: #fff;
+      border-color: #6366f1;
+      background: #4f46e5;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .chart-wrap {
+      position: relative;
+      border-radius: 14px;
+      border: 1px solid rgba(51, 65, 85, 0.75);
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100%; height: 440px; cursor: crosshair; }
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(2, 6, 23, 0.96);
+      color: #f8fafc;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translate(-50%, -100%);
+      transition: opacity 0.12s;
+      z-index: 10;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .tooltip.visible { opacity: 1; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(71, 85, 105, 0.55);
+      color: #94a3b8;
+      font-size: 0.8rem;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 8px; }
+    .legend-item strong { color: #e2e8f0; }
+    .legend-swatch { width: 20px; height: 4px; border-radius: 2px; }
+    .hint { margin-top: 12px; color: #94a3b8; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>${escapeHtml(pageTitle)}</h1>
+    <p>${escapeHtml(pageSubtitle)}</p>
+  </header>
+  <main>
+    <section class="panel">
+      <div class="tabs">${tabs}</div>
+      ${panels}
+      <p class="hint">切换标签查看内存 / CPU 曲线；悬停可查看时间与数值（离线 HTML）。</p>
+    </section>
+  </main>
+  <script>window.CHART_CONFIGS = ${configsJson};<\/script>
+  <script>${safeRuntime}<\/script>
+  <script>
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll(".tab-btn").forEach(el => el.classList.toggle("active", el === btn));
+        document.querySelectorAll(".tab-panel").forEach(el => el.classList.toggle("active", el.dataset.tab === tab));
+        window.dispatchEvent(new Event("resize"));
+      });
+    });
+  <\/script>
+</body>
+</html>`;
+    }
+
+    function buildInteractiveChartHtml(chartConfig, runtimeScript) {
+      const configJson = JSON.stringify(chartConfig).replace(/</g, "\\u003c");
+      const safeRuntime = escapeInlineScript(runtimeScript);
+      return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(chartConfig.title)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #060b14;
+      color: #e2e8f0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.5;
+    }
+    header {
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 45%, #7c3aed 100%);
+      color: #fff;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+    header h1 { margin: 0 0 8px; font-size: 1.25rem; }
+    header p { margin: 0; opacity: 0.9; font-size: 0.875rem; }
+    main { width: min(1200px, calc(100% - 32px)); margin: 20px auto 32px; }
+    .panel {
+      background: #0f172a;
+      border: 1px solid rgba(51, 65, 85, 0.75);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+    .chart-wrap {
+      position: relative;
+      border-radius: 14px;
+      border: 1px solid rgba(51, 65, 85, 0.75);
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100%; height: 440px; cursor: crosshair; }
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(2, 6, 23, 0.96);
+      color: #f8fafc;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translate(-50%, -100%);
+      transition: opacity 0.12s;
+      z-index: 10;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .tooltip.visible { opacity: 1; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(71, 85, 105, 0.55);
+      color: #94a3b8;
+      font-size: 0.8rem;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 8px; }
+    .legend-item strong { color: #e2e8f0; }
+    .legend-swatch { width: 20px; height: 4px; border-radius: 2px; }
+    .hint { margin-top: 12px; color: #94a3b8; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>${escapeHtml(chartConfig.title)}</h1>
+    <p>${escapeHtml(chartConfig.subtitle)}</p>
+  </header>
+  <main>
+    <section class="panel">
+      <div class="chart-wrap">
+        <canvas id="chart"></canvas>
+        <div id="tooltip" class="tooltip"></div>
+      </div>
+      <div id="legend" class="legend"></div>
+      <p class="hint">将鼠标移到曲线上可查看时间与各序列数值（离线 HTML，无需联网）。</p>
+    </section>
+  </main>
+  <script>window.CHART_CONFIG = ${configJson};<\/script>
+  <script>${safeRuntime}<\/script>
+</body>
+</html>`;
+    }
+
+    async function exportCharts() {
+      const hasMemory = showMemoryChart && Array.from(series.values()).some(data => data.memory.length);
+      const hasCpu = showCpuChart && Array.from(series.values()).some(
+        data => data.cpu.length || data.totalCpu.length,
+      );
+      if (!hasMemory && !hasCpu) {
+        log("没有可导出的曲线数据。");
+        return;
+      }
+
+      drawAll();
+      const exportSubtitle = `设备：${devices.join(", ")}    导出时间：${formatTime(new Date())}    采样点上限：${sampleLimit}`;
+      try {
+        const runtime = await loadChartExportRuntime();
+        const charts = [];
+        if (hasMemory) {
+          charts.push({
+            name: "memory",
+            html: buildInteractiveChartHtml({
+              title: `内存曲线 - ${memoryMode === "process" ? "系统进程" : "APP"}：${memoryTarget}`,
+              subtitle: exportSubtitle,
+              unit: "MB",
+              threshold: memoryThreshold,
+              sampleLimit,
+              lines: serializeExportLines(buildLines("memory")),
+            }, runtime),
+          });
+        }
+        if (hasCpu) {
+          charts.push({
+            name: "cpu",
+            html: buildInteractiveChartHtml({
+              title: `CPU 曲线 - ${cpuSummary()}`,
+              subtitle: exportSubtitle,
+              unit: "%",
+              threshold: cpuThreshold,
+              sampleLimit,
+              lines: serializeExportLines(buildCpuLines()),
+            }, runtime),
+          });
+        }
+        if (hasMemory && hasCpu) {
+          charts.push({
+            name: "combined",
+            html: buildCombinedChartHtml([
+              {
+                tabId: "memory",
+                tabLabel: "内存",
+                canvasId: "chart-memory",
+                tooltipId: "tooltip-memory",
+                legendId: "legend-memory",
+                title: `内存曲线 - ${memoryMode === "process" ? "系统进程" : "APP"}：${memoryTarget}`,
+                subtitle: exportSubtitle,
+                unit: "MB",
+                threshold: memoryThreshold,
+                sampleLimit,
+                lines: serializeExportLines(buildLines("memory")),
+              },
+              {
+                tabId: "cpu",
+                tabLabel: "CPU",
+                canvasId: "chart-cpu",
+                tooltipId: "tooltip-cpu",
+                legendId: "legend-cpu",
+                title: `CPU 曲线 - ${cpuSummary()}`,
+                subtitle: exportSubtitle,
+                unit: "%",
+                threshold: cpuThreshold,
+                sampleLimit,
+                lines: serializeExportLines(buildCpuLines()),
+              },
+            ], runtime, "内存 / CPU 曲线合集", exportSubtitle),
+          });
+        }
+
+        const prefix = `android_charts_${new Date().toISOString().replace(/[:.]/g, "-")}`;
+        const response = await fetch("/api/stats-save-charts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ outputDir, prefix, charts }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+          throw new Error(data.error || "导出曲线 HTML 失败");
+        }
+        log(`${data.message}，共 ${data.count} 个文件。`);
+        hasUnsavedSamples = false;
+      } catch (error) {
+        log(`导出曲线 HTML 失败：${error.message}`);
+      }
+    }
+
+    function log(text) {
+      const element = document.getElementById("log");
+      element.textContent = `${text}\n${element.textContent}`.slice(0, 12000);
+    }
+
+    function getCss(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function formatTime(date) {
+      const pad = value => String(value).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} `
+        + `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    init();
+  </script>
+</body>
+</html>

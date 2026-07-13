@@ -1,0 +1,2695 @@
+<!doctype html>
+<html lang="zh-CN" class="theme-dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Android 智能设备测试工具</title>
+  <link rel="stylesheet" href="/theme.css">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      background-image: var(--bg-accent);
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 24px 32px 20px;
+      background: var(--header-grad);
+      color: #fff;
+      box-shadow: var(--shadow-lg);
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 0.9rem;
+      opacity: 0.9;
+      max-width: 52ch;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .header-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+
+    .header-link:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .quick-bar {
+      width: min(1380px, calc(100% - 32px));
+      margin: 0 auto 16px;
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .quick-bar button {
+      width: auto;
+      flex: 0 0 auto;
+      min-height: 36px;
+      margin: 0;
+      padding: 8px 16px;
+      font-size: 0.8125rem;
+      line-height: 1.2;
+      box-shadow: var(--shadow);
+      border: 1px solid transparent;
+      box-sizing: border-box;
+    }
+
+    .quick-bar button.secondary {
+      border-color: var(--border);
+    }
+
+    .quick-bar button:hover:not(:disabled) {
+      transform: none;
+    }
+
+    .adb-banner {
+      width: min(1380px, calc(100% - 32px));
+      margin: 12px auto 0;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      font-size: 0.875rem;
+      box-shadow: var(--shadow);
+    }
+
+    .adb-banner.ok {
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.08);
+    }
+
+    .adb-banner.warn {
+      border-color: rgba(251, 191, 36, 0.45);
+      background: rgba(251, 191, 36, 0.08);
+    }
+
+    .adb-banner.error {
+      border-color: rgba(248, 113, 113, 0.45);
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    .adb-banner-text {
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .adb-banner-refresh {
+      width: auto;
+      flex-shrink: 0;
+      min-height: 32px;
+      padding: 6px 14px;
+      font-size: 0.8125rem;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .action-row button {
+      margin: 0;
+    }
+
+  .action-row .cancel-btn {
+      min-width: 88px;
+    }
+
+    main {
+      width: min(1380px, calc(100% - 32px));
+      margin: 0 auto 36px;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    aside {
+      position: sticky;
+      top: 16px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+    }
+
+    section, .result-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    section { padding: 16px; }
+
+    .sidebar-section h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      margin: 0 0 12px;
+    }
+
+    .sidebar-section h2::before {
+      content: "📱";
+      font-size: 1.1rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 4px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 11px;
+      background: var(--input-bg);
+      color: var(--text);
+      font: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    button {
+      width: 100%;
+      min-height: 38px;
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
+      box-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    button:active:not(:disabled) { transform: translateY(0); }
+
+    button.secondary {
+      background: var(--panel-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    button.secondary:hover:not(:disabled) {
+      background: var(--border);
+      border-color: var(--muted);
+    }
+
+    button.danger {
+      background: #dc2626;
+      box-shadow: 0 2px 10px rgba(220, 38, 38, 0.25);
+    }
+
+    button.danger:hover:not(:disabled) { background: #b91c1c; }
+
+    button.accent {
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      box-shadow: 0 2px 12px rgba(139, 92, 246, 0.35);
+    }
+
+    button.accent:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    button.small {
+      min-height: 32px;
+      padding: 5px 10px;
+      font-size: 0.8125rem;
+      width: auto;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+    }
+
+    button.is-loading {
+      position: relative;
+      opacity: 0.85;
+      cursor: wait;
+    }
+
+    .toast-banner {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: min(640px, calc(100% - 32px));
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      animation: toast-in 0.25s ease;
+    }
+
+    .toast-banner[hidden] { display: none; }
+
+    .toast-banner.success {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: rgba(74, 222, 128, 0.45);
+      color: #86efac;
+    }
+
+    .toast-banner.error {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: rgba(248, 113, 113, 0.45);
+      color: #fca5a5;
+    }
+
+    html.theme-light .toast-banner.success,
+    html.theme-light .toast-banner.error {
+      background: #ffffff;
+    }
+
+    html.theme-light .toast-banner.success { color: var(--ok); }
+    html.theme-light .toast-banner.error { color: var(--bad); }
+
+    .toast-close {
+      width: auto;
+      min-height: auto;
+      padding: 2px 8px;
+      background: transparent;
+      color: inherit;
+      border: 1px solid currentColor;
+      box-shadow: none;
+      opacity: 0.75;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .toast-close:hover { opacity: 1; transform: none; }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .chart-point-estimate {
+      margin: 8px 0 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .package-sync-hint {
+      margin-top: 6px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .actions button { flex: 1; }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .button-grid .wide { grid-column: 1 / -1; }
+
+    .device-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .device-tools {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .device-tools .row-compact {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .device-group-panel {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .inline-actions button {
+      width: auto;
+      flex: 0 0 auto;
+    }
+
+    .inline-actions input,
+    .inline-actions select {
+      flex: 1 1 160px;
+      min-width: 140px;
+    }
+
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 650;
+    }
+
+    .chip button {
+      min-height: auto;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      width: auto;
+      box-shadow: none;
+    }
+
+    .preset-panel {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .preset-panel .inline-actions {
+      margin-top: 8px;
+    }
+
+    .device-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--input-bg);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .device-item:has(input:checked:not(:disabled)) {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .device-item:has(input:disabled) {
+      opacity: 0.72;
+      cursor: not-allowed;
+    }
+
+    .device-item.state-warn {
+      border-color: rgba(251, 191, 36, 0.45);
+    }
+
+    .device-item.state-bad {
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+
+    .device-list.input-invalid {
+      outline: 2px solid var(--bad);
+      outline-offset: 4px;
+      border-radius: 10px;
+    }
+
+    .device-item input {
+      width: auto;
+      min-height: auto;
+      margin-top: 4px;
+    }
+
+    .device-row-title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .device-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .device-badge.state-ok {
+      background: rgba(74, 222, 128, 0.18);
+      color: var(--ok);
+    }
+
+    .device-badge.state-warn {
+      background: rgba(251, 191, 36, 0.18);
+      color: #fbbf24;
+    }
+
+    .device-badge.state-bad {
+      background: rgba(248, 113, 113, 0.18);
+      color: var(--bad);
+    }
+
+    .device-badge.state-muted {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--muted);
+    }
+
+    .device-meta {
+      color: var(--muted);
+      font-size: 0.75rem;
+      word-break: break-all;
+      margin-top: 4px;
+    }
+
+    .field-error {
+      margin: 6px 0 0;
+      color: var(--bad);
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .field-error[hidden] { display: none; }
+
+    input.input-invalid,
+    textarea.input-invalid,
+    select.input-invalid {
+      border-color: var(--bad);
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2);
+    }
+
+    .tools {
+      column-count: 2;
+      column-gap: 14px;
+    }
+
+    .tool-card {
+      display: inline-block;
+      width: 100%;
+      margin: 0 0 14px;
+      break-inside: avoid;
+      border-left: 4px solid var(--card-accent, var(--primary));
+      overflow: hidden;
+    }
+
+    .tool-card.cat-memory { --card-accent: var(--memory); }
+    .tool-card.cat-cpu { --card-accent: var(--cpu); }
+    .tool-card.cat-chart { --card-accent: var(--chart); }
+    .tool-card.cat-storage { --card-accent: var(--storage); }
+    .tool-card.cat-install { --card-accent: var(--install); }
+    .tool-card.cat-monkey { --card-accent: var(--monkey); }
+    .tool-card.cat-media { --card-accent: var(--media); }
+    .tool-card.cat-app { --card-accent: var(--app); }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-soft);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .cat-memory .card-icon { background: rgba(96, 165, 250, 0.15); }
+    .cat-cpu .card-icon { background: rgba(52, 211, 153, 0.15); }
+    .cat-chart .card-icon { background: rgba(167, 139, 250, 0.15); }
+    .cat-storage .card-icon { background: rgba(251, 146, 60, 0.15); }
+    .cat-install .card-icon { background: rgba(34, 211, 238, 0.15); }
+    .cat-monkey .card-icon { background: rgba(251, 191, 36, 0.15); }
+    .cat-media .card-icon { background: rgba(244, 114, 182, 0.15); }
+    .cat-app .card-icon { background: rgba(148, 163, 184, 0.15); }
+
+    select[multiple] {
+      min-height: 116px;
+    }
+
+    select[multiple] option:checked {
+      background: var(--primary);
+      color: white;
+    }
+
+    textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 8px;
+      line-height: 1.45;
+    }
+
+    .progress-wrap { margin-top: 12px; }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--border);
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width 0.25s ease;
+    }
+
+    .progress-text {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .result-panel {
+      column-span: all;
+      display: block;
+      width: 100%;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .result-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-elevated);
+    }
+
+    .result-head strong { font-size: 0.95rem; }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.8125rem;
+      flex: 1;
+      text-align: center;
+    }
+
+    .status.ok { color: var(--ok); }
+    .status.bad { color: var(--bad); }
+
+    .log-panel-body {
+      min-height: 240px;
+      max-height: 520px;
+      overflow-y: auto;
+      overflow-anchor: none;
+      padding: 12px;
+      background: var(--code);
+    }
+
+    .log-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      padding: 24px;
+      text-align: center;
+      color: #94a3b8;
+    }
+
+    .log-empty[hidden] { display: none; }
+
+    .log-empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      opacity: 0.6;
+    }
+
+    .log-empty p {
+      margin: 0;
+      font-size: 0.875rem;
+      max-width: 28ch;
+    }
+
+    .log-output {
+      display: grid;
+      gap: 10px;
+    }
+
+    .log-entry {
+      border-radius: 10px;
+      border: 1px solid var(--code-border);
+      background: rgba(15, 23, 42, 0.6);
+      overflow: hidden;
+    }
+
+  html.theme-light .log-entry {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .log-entry-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--code-border);
+    }
+
+    .log-entry-head strong {
+      color: #e2e8f0;
+      font-size: 0.8125rem;
+    }
+
+    .log-entry-head time {
+      color: #64748b;
+      font-size: 0.7rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .log-entry.log-success .log-entry-head strong { color: #86efac; }
+    .log-entry.log-error .log-entry-head strong { color: #fca5a5; }
+    .log-entry.log-info .log-entry-head strong { color: #93c5fd; }
+
+    .log-entry-body {
+      margin: 0;
+      padding: 10px 12px 12px;
+      color: #cbd5e1;
+      font-size: 0.8rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, "Cascadia Mono", monospace;
+    }
+
+    .log-live-status {
+      padding: 10px 12px;
+      color: #e2e8f0;
+      font-size: 0.8rem;
+      line-height: 1.55;
+      border-bottom: 1px solid var(--code-border);
+      background: rgba(148, 163, 184, 0.08);
+      font-family: Consolas, "Cascadia Mono", monospace;
+      word-break: break-word;
+    }
+
+    .log-live-lines:empty {
+      display: none;
+    }
+
+    .log-device {
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .log-device:last-child { margin-bottom: 0; }
+
+    .log-device-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .log-device.ok .log-device-title { color: var(--ok); }
+    .log-device.bad .log-device-title { color: var(--bad); }
+
+    @media (max-width: 1000px) {
+      main { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        max-height: none;
+      }
+      .tools { column-count: 1; }
+      header { flex-direction: column; }
+    }
+  </style>
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Android 智能设备测试工具</h1>
+      <p>支持 USB / IP 多设备连接，内存、CPU、安装、截图、录屏和当前包名查询。</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="header-link" id="themeToggle">浅色模式</button>
+    </div>
+  </header>
+
+  <div id="adbBanner" class="adb-banner ok" role="status" hidden>
+    <span id="adbBannerText" class="adb-banner-text">正在检测 ADB…</span>
+    <button type="button" class="secondary adb-banner-refresh" onclick="refreshAdbStatus()">刷新 ADB</button>
+  </div>
+
+  <div id="toastBanner" class="toast-banner success" role="status" hidden>
+    <span id="toastMessage"></span>
+    <button type="button" class="toast-close" onclick="hideToast()" aria-label="关闭">×</button>
+  </div>
+
+  <div class="quick-bar">
+    <button type="button" onclick="refreshDevices(this)">刷新设备</button>
+    <button type="button" class="secondary" onclick="selectAllDevices()">全选设备</button>
+    <button type="button" class="accent" onclick="openPerformanceChart(this)">打开性能曲线</button>
+    <button type="button" class="secondary" onclick="scrollToOutput()">查看结果</button>
+  </div>
+
+  <main>
+    <aside>
+      <section class="sidebar-section">
+        <h2>设备连接</h2>
+        <label for="connectMode">连接方式</label>
+        <select id="connectMode">
+          <option value="usb">USB 连接</option>
+          <option value="ip">IP 连接</option>
+        </select>
+
+        <div id="ipPanel" hidden>
+          <label for="deviceIp">设备 IP</label>
+          <input id="deviceIp" list="ipHistory" placeholder="例如 192.168.1.10 或 192.168.1.10:5555">
+          <datalist id="ipHistory"></datalist>
+          <div class="actions">
+            <button type="button" onclick="connectIp(this)">连接 IP</button>
+            <button type="button" class="secondary" onclick="clearIpHistory()">清空记忆</button>
+          </div>
+          <p class="hint">IP 历史保存在当前浏览器本地，下次输入前几个字符会自动补全。</p>
+        </div>
+
+        <div class="actions">
+          <button type="button" onclick="refreshDevices(this)">刷新设备</button>
+          <button type="button" class="secondary" onclick="selectAllDevices()">全选</button>
+        </div>
+
+        <div class="device-tools">
+          <div class="row-compact">
+            <div>
+              <label for="deviceSearch">搜索设备</label>
+              <input id="deviceSearch" placeholder="输入 serial / details 过滤">
+            </div>
+            <div>
+              <label for="deviceFilter">状态过滤</label>
+              <select id="deviceFilter">
+                <option value="all">全部</option>
+                <option value="device">已连接</option>
+                <option value="unauthorized">未授权</option>
+                <option value="offline">离线</option>
+              </select>
+            </div>
+          </div>
+          <div class="inline-actions">
+            <button type="button" class="secondary small" onclick="clearDeviceSearch()">清空过滤</button>
+            <button type="button" class="secondary small" onclick="toggleUnavailableDevices()">显示/隐藏不可用设备</button>
+          </div>
+        </div>
+
+        <div id="deviceList" class="device-list"></div>
+
+        <div class="device-group-panel">
+          <label for="deviceGroupName">设备分组</label>
+          <div class="inline-actions">
+            <input id="deviceGroupName" placeholder="例如：回归组A">
+            <button type="button" class="secondary" onclick="saveDeviceGroup()">保存分组</button>
+          </div>
+          <div class="chip-list" id="deviceGroupList"></div>
+          <p class="hint">把当前勾选保存为分组，后续一键勾选；分组与搜索仅保存在本浏览器本地。</p>
+        </div>
+
+        <label for="appPackage">常用 APP 包名</label>
+        <input id="appPackage" list="packageHistory" placeholder="例如 com.tencent.mm">
+        <datalist id="packageHistory"></datalist>
+        <p class="hint package-sync-hint">自动同步到 APP 内存、APP CPU 与曲线采样；输入后记忆最近 5 个包名。</p>
+      </section>
+    </aside>
+
+    <div class="tools">
+      <section class="tool-card cat-memory">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">💾</span>
+          <h3>系统进程内存（单次查询）</h3>
+        </div>
+        <label for="processName">系统进程名称</label>
+        <input id="processName" placeholder="例如 mediaserver">
+        <button type="button" onclick="runProcessMemory(this)">单次查询进程内存</button>
+        <p class="hint">立即查询一次并在结果区输出；连续采样请使用「性能曲线」。</p>
+      </section>
+
+      <section class="tool-card cat-memory">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">📦</span>
+          <h3>APP 内存（单次查询）</h3>
+        </div>
+        <label for="appMemPackage">APP 包名</label>
+        <input id="appMemPackage" list="packageHistory" placeholder="与侧栏常用包名同步">
+        <button type="button" onclick="runAppMemory(this)">单次查询 APP 内存</button>
+        <p class="hint">执行 `dumpsys meminfo 包名`；包名与侧栏「常用 APP 包名」同步。</p>
+      </section>
+
+      <section class="tool-card cat-cpu">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">⚡</span>
+          <h3>APP CPU（单次查询）</h3>
+        </div>
+        <label for="appCpuPackage">APP 包名</label>
+        <input id="appCpuPackage" list="packageHistory" placeholder="与侧栏常用包名同步">
+        <div class="button-grid">
+          <button type="button" onclick="runAppCpu(this)">单进程 CPU</button>
+          <button type="button" onclick="runTotalCpu(this)">CPU 总占用</button>
+          <button type="button" class="secondary wide" onclick="runAppAndTotalCpu(this)">单进程 + 总占用</button>
+        </div>
+        <p class="hint">单进程优先 PID + top；总占用为整机 CPU 使用率。</p>
+      </section>
+
+      <section class="tool-card cat-chart">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">📈</span>
+          <h3>内存 / CPU 曲线</h3>
+        </div>
+        <label for="chartMemoryMode">曲线抓取类型</label>
+        <select id="chartMemoryMode">
+          <option value="app">APP 内存（使用常用 APP 包名）</option>
+          <option value="process">系统进程内存（使用系统进程栏名称）</option>
+          <option value="none">不抓取内存，仅抓取 CPU</option>
+        </select>
+        <label for="chartCpuMode">CPU 抓取类型</label>
+        <select id="chartCpuMode">
+          <option value="both">APP 单进程 CPU + CPU 总占用率</option>
+          <option value="app">只抓取 APP 单进程 CPU</option>
+          <option value="total">只抓取 CPU 总占用率</option>
+          <option value="none">不抓取 CPU，仅抓取内存</option>
+        </select>
+        <div class="row">
+          <div>
+            <label for="chartMemoryThreshold">内存阈值（MB）</label>
+            <input id="chartMemoryThreshold" type="number" min="0" placeholder="例如 500">
+          </div>
+          <div>
+            <label for="chartCpuThreshold">CPU 阈值（%）</label>
+            <input id="chartCpuThreshold" type="number" min="0" step="0.1" placeholder="例如 30">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="chartSampleInterval">抓取间隔（秒）</label>
+            <input id="chartSampleInterval" type="number" min="1" step="0.5" value="2">
+          </div>
+          <div>
+            <label for="chartSampleDuration">抓取总时长（秒）</label>
+            <input id="chartSampleDuration" type="number" min="1" placeholder="留空为持续抓取">
+          </div>
+        </div>
+        <label for="chartMaxPoints">最多保留点数</label>
+        <input id="chartMaxPoints" type="number" min="120" max="50000" step="1" value="7200">
+        <p id="chartPointEstimate" class="chart-point-estimate">预计保留约 7200 个采样点（持续抓取模式）</p>
+        <p class="hint">留空「总时长」时按最多保留点数滚动；填写总时长时按 总时长 ÷ 间隔 计算（上限 50000）。</p>
+        <label for="chartStatsDir">Excel / 曲线图保存路径</label>
+        <input id="chartStatsDir" placeholder="留空使用 stats_exports">
+        <div class="preset-panel">
+          <label for="chartPresetSelect">曲线配置预设</label>
+          <div class="inline-actions">
+            <select id="chartPresetSelect"></select>
+            <button type="button" class="secondary" onclick="loadChartPreset()">加载</button>
+            <button type="button" class="secondary danger" onclick="deleteChartPreset()">删除</button>
+          </div>
+          <div class="inline-actions">
+            <input id="chartPresetName" placeholder="预设名称，例如：CPU总占用/2s/阈值30">
+            <button type="button" class="secondary" onclick="saveChartPreset()">保存为预设</button>
+          </div>
+          <p class="hint">预设会保存曲线抓取类型、阈值、间隔、时长、点数与保存路径；默认自动恢复上次使用的配置。</p>
+        </div>
+        <button type="button" class="accent" onclick="openPerformanceChart(this)">开始连续采样并打开曲线</button>
+        <p class="hint">新页面支持阈值线、Excel 与交互式曲线 HTML 导出（悬停查看数值）；采样目标来自上方单次查询栏。</p>
+      </section>
+
+      <section class="tool-card cat-storage">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">🗄️</span>
+          <h3>设备内存填充</h3>
+        </div>
+        <div class="row">
+          <div>
+            <label for="fillPath">设备路径</label>
+            <input id="fillPath" value="/sdcard">
+          </div>
+          <div>
+            <label for="fillName">文件名称</label>
+            <input id="fillName" value="aa">
+          </div>
+        </div>
+        <label for="fillSize">填充大小（MB）</label>
+        <input id="fillSize" type="number" min="1" value="1024">
+        <div class="action-row">
+          <button id="fillButton" type="button" onclick="runFillMemory()">开始填充</button>
+          <button id="fillCancelButton" type="button" class="secondary cancel-btn" hidden onclick="cancelFillMemory()">取消</button>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress" aria-label="内存填充进度">
+            <div id="fillProgressBar" class="progress-bar"></div>
+          </div>
+          <p id="fillProgressText" class="progress-text">等待填充任务</p>
+        </div>
+        <p class="hint">执行 `dd if=/dev/zero` 填充指定路径与大小。</p>
+      </section>
+
+      <section class="tool-card cat-install">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">📲</span>
+          <h3>批量安装 APK</h3>
+        </div>
+        <label for="apkDir">APK 存放路径</label>
+        <input id="apkDir" placeholder="例如 D:\apk 或 ./apks">
+        <div class="action-row">
+          <button id="installButton" type="button" onclick="runInstallApks()">批量安装</button>
+          <button id="installCancelButton" type="button" class="secondary cancel-btn" hidden onclick="cancelInstallApks()">取消</button>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress" aria-label="APK 安装进度">
+            <div id="installProgressBar" class="progress-bar"></div>
+          </div>
+          <p id="installProgressText" class="progress-text">等待安装任务</p>
+        </div>
+        <p class="hint">按文件名顺序安装目录下所有 `.apk`，多设备逐台执行。</p>
+      </section>
+
+      <section class="tool-card cat-monkey">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">🐵</span>
+          <h3>Monkey 测试</h3>
+        </div>
+        <label for="monkeyTestPackages">被测 APP 包名（每行一个，至少一个）</label>
+        <textarea id="monkeyTestPackages" placeholder="例如：&#10;com.tencent.mm"></textarea>
+        <p class="hint">这些包名会写入 `/sdcard/whitelist.txt`，Monkey 只会在这些包名范围内随机操作。</p>
+
+        <label for="monkeyExcludePackages">排除包名（不测，可选，每行一个）</label>
+        <textarea id="monkeyExcludePackages" placeholder="例如：&#10;com.android.settings"></textarea>
+        <p class="hint">这些包名会写入 `/sdcard/blacklist.txt`，用于排除不希望触发的 APP。</p>
+        <div class="row">
+          <div>
+            <label for="monkeyEventCount">事件数</label>
+            <input id="monkeyEventCount" type="number" min="1" value="10000">
+          </div>
+          <div>
+            <label for="monkeyThrottle">事件间隔（ms）</label>
+            <input id="monkeyThrottle" type="number" min="0" value="300">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="monkeyPctSyskeys">系统按键占比（%）</label>
+            <input id="monkeyPctSyskeys" type="number" min="0" max="100" value="0">
+          </div>
+          <div>
+            <label for="monkeyPctTouch">触摸事件占比（%）</label>
+            <input id="monkeyPctTouch" type="number" min="0" max="100" value="90">
+          </div>
+        </div>
+        <label for="monkeySeed">随机数种子（可选）</label>
+        <input id="monkeySeed" placeholder="例如 12345">
+        <label>常用 Monkey 参数（可多选）</label>
+        <div class="device-list" id="monkeyOptionsList" style="margin-top:8px">
+          <label class="device-item" style="grid-template-columns:auto 1fr;cursor:pointer">
+            <input type="checkbox" name="monkeyOption" value="--ignore-crashes" checked>
+            <span>
+              <div class="device-row-title"><strong>--ignore-crashes</strong></div>
+              <div class="device-meta">应用 Crash 后继续执行</div>
+            </span>
+          </label>
+          <label class="device-item" style="grid-template-columns:auto 1fr;cursor:pointer">
+            <input type="checkbox" name="monkeyOption" value="--ignore-native-crashes" checked>
+            <span>
+              <div class="device-row-title"><strong>--ignore-native-crashes</strong></div>
+              <div class="device-meta">Native Crash 后继续执行</div>
+            </span>
+          </label>
+          <label class="device-item" style="grid-template-columns:auto 1fr;cursor:pointer">
+            <input type="checkbox" name="monkeyOption" value="--ignore-timeouts" checked>
+            <span>
+              <div class="device-row-title"><strong>--ignore-timeouts</strong></div>
+              <div class="device-meta">ANR/超时后继续执行</div>
+            </span>
+          </label>
+          <label class="device-item" style="grid-template-columns:auto 1fr;cursor:pointer">
+            <input type="checkbox" name="monkeyOption" value="--ignore-security-exceptions" checked>
+            <span>
+              <div class="device-row-title"><strong>--ignore-security-exceptions</strong></div>
+              <div class="device-meta">安全异常后继续执行</div>
+            </span>
+          </label>
+        </div>
+        <div class="inline-actions" style="margin-top:8px">
+          <button type="button" class="secondary small" onclick="selectAllMonkeyOptions()">全选</button>
+          <button type="button" class="secondary small" onclick="clearMonkeyOptions()">全不选</button>
+          <button type="button" class="secondary small" onclick="resetMonkeyOptionsDefault()">恢复默认</button>
+        </div>
+        <p id="monkeySelectedOptionsText" class="hint"></p>
+        <p class="hint">点击复选框即可选中/取消；建议保留默认的忽略参数以便不中断长时间测试。</p>
+        <label for="monkeyExtraArgs">其他 Monkey 参数（可选）</label>
+        <input id="monkeyExtraArgs" placeholder="例如 --pct-motion 10">
+        <label for="monkeyOutputDir">Monkey 日志保存路径</label>
+        <input id="monkeyOutputDir" placeholder="留空使用 monkey_logs">
+        <div class="action-row">
+          <button id="monkeyButton" type="button" onclick="runMonkeyTest()">开始 Monkey 测试</button>
+          <button id="monkeyCancelButton" type="button" class="secondary cancel-btn" hidden onclick="cancelMonkeyTest()">取消</button>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress" aria-label="Monkey 测试进度">
+            <div id="monkeyProgressBar" class="progress-bar"></div>
+          </div>
+          <p id="monkeyProgressText" class="progress-text">等待 Monkey 任务</p>
+        </div>
+        <p class="hint">自动统计 Crash / ANR，完成后打开日志目录。</p>
+      </section>
+
+      <section class="tool-card cat-media">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">🖥️</span>
+          <h3>屏幕信息</h3>
+        </div>
+        <button type="button" class="secondary" onclick="runScreenSize()">查看屏幕分辨率</button>
+      </section>
+
+      <section class="tool-card cat-media">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">📷</span>
+          <h3>截图</h3>
+        </div>
+        <label for="screenshotDir">保存路径（留空使用默认 captures）</label>
+        <input id="screenshotDir" placeholder="例如 D:\captures">
+        <button type="button" onclick="runScreenshot(this)">截图</button>
+      </section>
+
+      <section class="tool-card cat-media">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">🎬</span>
+          <h3>录屏</h3>
+        </div>
+        <label for="recordDir">保存路径（留空使用默认 captures）</label>
+        <input id="recordDir" placeholder="例如 D:\captures">
+        <div class="actions">
+          <button type="button" onclick="startRecord(this)">开始录屏</button>
+          <button type="button" class="danger" onclick="stopRecord(this)">停止录屏</button>
+        </div>
+        <p class="hint">停止时自动拉取 MP4 到本地保存路径。</p>
+      </section>
+
+      <section class="tool-card cat-app">
+        <div class="card-head">
+          <span class="card-icon" aria-hidden="true">📱</span>
+          <h3>当前应用</h3>
+        </div>
+        <button type="button" class="secondary" onclick="runCurrentPackage(this)">查看当前应用包名</button>
+      </section>
+
+      <section class="result-panel">
+        <div class="result-head">
+          <strong>执行结果</strong>
+          <span id="status" class="status">等待操作</span>
+          <button type="button" class="secondary small" onclick="clearOutput()">清空</button>
+        </div>
+        <div class="log-panel-body">
+          <div id="logEmpty" class="log-empty">
+            <span class="log-empty-icon" aria-hidden="true">📋</span>
+            <p>选择设备后执行操作，结果将按任务分条显示在这里。</p>
+          </div>
+          <div id="logOutput" class="log-output"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const ipStorageKey = "android-tool-ip-history";
+    const packageStorageKey = "android-tool-package-history";
+    const selectedDevicesStorageKey = "android-tool-selected-devices";
+    const deviceGroupsStorageKey = "android-tool-device-groups";
+    const chartPresetStorageKey = "android-tool-chart-presets";
+    const chartLastConfigStorageKey = "android-tool-chart-last-config";
+    const sessionStorageKeys = {
+      fill: "android-tool-session-fill",
+      install: "android-tool-session-install",
+      monkey: "android-tool-session-monkey",
+    };
+    const ABSOLUTE_MAX_POINTS = 50000;
+    let allDevicesCache = [];
+    let showUnavailableDevices = true;
+    let toastTimer = null;
+    let syncingPackage = false;
+    const deviceList = document.getElementById("deviceList");
+    const resultPanel = document.querySelector(".result-panel");
+    const logPanelBody = document.querySelector(".log-panel-body");
+    const logOutput = document.getElementById("logOutput");
+    const logEmpty = document.getElementById("logEmpty");
+    const statusText = document.getElementById("status");
+    const connectMode = document.getElementById("connectMode");
+    const ipPanel = document.getElementById("ipPanel");
+    const fillButton = document.getElementById("fillButton");
+    const fillCancelButton = document.getElementById("fillCancelButton");
+    const fillProgressBar = document.getElementById("fillProgressBar");
+    const fillProgressText = document.getElementById("fillProgressText");
+    const installButton = document.getElementById("installButton");
+    const installCancelButton = document.getElementById("installCancelButton");
+    const installProgressBar = document.getElementById("installProgressBar");
+    const installProgressText = document.getElementById("installProgressText");
+    const monkeyButton = document.getElementById("monkeyButton");
+    const monkeyCancelButton = document.getElementById("monkeyCancelButton");
+    const monkeyProgressBar = document.getElementById("monkeyProgressBar");
+    const monkeyProgressText = document.getElementById("monkeyProgressText");
+    const adbBanner = document.getElementById("adbBanner");
+    const adbBannerText = document.getElementById("adbBannerText");
+    const deviceSearch = document.getElementById("deviceSearch");
+    const deviceFilter = document.getElementById("deviceFilter");
+    const deviceGroupList = document.getElementById("deviceGroupList");
+    const chartPresetSelect = document.getElementById("chartPresetSelect");
+    let fillSessionId = "";
+    let installSessionId = "";
+    let monkeySessionId = "";
+    const liveOutputEntries = new Map();
+    const monkeySelectedOptionsText = document.getElementById("monkeySelectedOptionsText");
+    const toastBanner = document.getElementById("toastBanner");
+    const toastMessage = document.getElementById("toastMessage");
+
+    connectMode.addEventListener("change", () => {
+      ipPanel.hidden = connectMode.value !== "ip";
+    });
+
+    function selectedMonkeyOptions() {
+      return Array.from(document.querySelectorAll("[name='monkeyOption']:checked")).map(el => el.value);
+    }
+
+    function updateMonkeySelectedOptions() {
+      const selected = selectedMonkeyOptions();
+      monkeySelectedOptionsText.textContent = selected.length
+        ? `已选择：${selected.join("，")}`
+        : "未选择常用参数。";
+    }
+
+    function selectAllMonkeyOptions() {
+      document.querySelectorAll("[name='monkeyOption']").forEach(el => { el.checked = true; });
+      updateMonkeySelectedOptions();
+    }
+
+    function clearMonkeyOptions() {
+      document.querySelectorAll("[name='monkeyOption']").forEach(el => { el.checked = false; });
+      updateMonkeySelectedOptions();
+    }
+
+    function resetMonkeyOptionsDefault() {
+      const defaults = new Set([
+        "--ignore-crashes",
+        "--ignore-native-crashes",
+        "--ignore-timeouts",
+        "--ignore-security-exceptions",
+      ]);
+      document.querySelectorAll("[name='monkeyOption']").forEach(el => {
+        el.checked = defaults.has(el.value);
+      });
+      updateMonkeySelectedOptions();
+    }
+
+    function getPackageHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(packageStorageKey) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function savePackageHistory(packageName) {
+      const normalized = packageName.trim();
+      if (!normalized) return;
+      const history = [normalized, ...getPackageHistory().filter(item => item !== normalized)].slice(0, 5);
+      localStorage.setItem(packageStorageKey, JSON.stringify(history));
+      renderPackageHistory();
+    }
+
+    function renderPackageHistory() {
+      const datalist = document.getElementById("packageHistory");
+      datalist.innerHTML = "";
+      for (const pkg of getPackageHistory()) {
+        const option = document.createElement("option");
+        option.value = pkg;
+        datalist.appendChild(option);
+      }
+    }
+
+    function setAppPackage(packageName, saveHistory = false) {
+      syncingPackage = true;
+      const normalized = packageName.trim();
+      document.getElementById("appPackage").value = normalized;
+      document.getElementById("appMemPackage").value = normalized;
+      document.getElementById("appCpuPackage").value = normalized;
+      syncingPackage = false;
+      if (saveHistory && normalized) savePackageHistory(normalized);
+    }
+
+    function appPackageValue() {
+      return value("appPackage") || value("appMemPackage") || value("appCpuPackage");
+    }
+
+    function bindPackageSync() {
+      const master = document.getElementById("appPackage");
+      const mem = document.getElementById("appMemPackage");
+      const cpu = document.getElementById("appCpuPackage");
+      master.addEventListener("input", () => {
+        if (syncingPackage) return;
+        setAppPackage(master.value, false);
+      });
+      mem.addEventListener("input", () => {
+        if (syncingPackage) return;
+        setAppPackage(mem.value, false);
+      });
+      cpu.addEventListener("input", () => {
+        if (syncingPackage) return;
+        setAppPackage(cpu.value, false);
+      });
+      master.addEventListener("change", () => savePackageHistory(value("appPackage")));
+    }
+
+    function showToast(message, isError = false) {
+      toastMessage.textContent = message;
+      toastBanner.className = `toast-banner ${isError ? "error" : "success"}`;
+      toastBanner.hidden = false;
+      scrollToOutput();
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => hideToast(), 8000);
+    }
+
+    function hideToast() {
+      toastBanner.hidden = true;
+      if (toastTimer) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+      }
+    }
+
+    function setButtonLoading(button, loading, loadingText = "执行中…") {
+      if (!button) return;
+      if (!button.dataset.defaultLabel) {
+        button.dataset.defaultLabel = button.textContent;
+      }
+      button.disabled = loading;
+      button.classList.toggle("is-loading", loading);
+      button.textContent = loading ? loadingText : button.dataset.defaultLabel;
+    }
+
+    function setStoredSession(type, sessionId) {
+      const key = sessionStorageKeys[type];
+      if (!key) return;
+      try {
+        if (sessionId) localStorage.setItem(key, sessionId);
+        else localStorage.removeItem(key);
+      } catch {
+        // ignore storage quota / privacy errors
+      }
+    }
+
+    function getStoredSession(type) {
+      const key = sessionStorageKeys[type];
+      if (!key) return "";
+      try {
+        return String(localStorage.getItem(key) || "");
+      } catch {
+        return "";
+      }
+    }
+
+    function setTaskCancelVisible(cancelButton, visible) {
+      cancelButton.hidden = !visible;
+    }
+
+    async function runWithButton(button, task, loadingText = "执行中…") {
+      if (!button) {
+        await task();
+        return;
+      }
+      if (button.disabled) return;
+      setButtonLoading(button, true, loadingText);
+      try {
+        await task();
+      } finally {
+        setButtonLoading(button, false);
+      }
+    }
+
+    function updateChartPointEstimate() {
+      const el = document.getElementById("chartPointEstimate");
+      if (!el) return;
+      const intervalSec = Number(value("chartSampleInterval"));
+      const durationRaw = value("chartSampleDuration");
+      const maxPoints = Number(value("chartMaxPoints")) || 7200;
+      if (!Number.isFinite(intervalSec) || intervalSec <= 0) {
+        el.textContent = "请填写有效的抓取间隔。";
+        return;
+      }
+      if (durationRaw) {
+        const durationSec = Number(durationRaw);
+        if (!Number.isFinite(durationSec) || durationSec <= 0) {
+          el.textContent = "请填写有效的抓取总时长。";
+          return;
+        }
+        const estimated = Math.min(
+          ABSOLUTE_MAX_POINTS,
+          Math.max(2, Math.ceil(durationSec / intervalSec) + 2),
+        );
+        const capped = estimated >= ABSOLUTE_MAX_POINTS ? "（已达上限 50000）" : "";
+        el.textContent = `预计约 ${estimated} 个采样点（${durationSec} 秒 ÷ ${intervalSec} 秒间隔）${capped}`;
+        return;
+      }
+      const cappedMax = Math.min(ABSOLUTE_MAX_POINTS, Math.max(120, maxPoints));
+      const approxSec = cappedMax * intervalSec;
+      el.textContent = `预计最多保留 ${cappedMax} 个采样点（持续抓取，约 ${formatDurationHint(approxSec)}）`;
+    }
+
+    function formatDurationHint(totalSec) {
+      const sec = Math.round(totalSec);
+      if (sec < 60) return `${sec} 秒`;
+      if (sec < 3600) return `${Math.round(sec / 60)} 分钟`;
+      const hours = Math.floor(sec / 3600);
+      const mins = Math.round((sec % 3600) / 60);
+      return mins ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`;
+    }
+
+    function getIpHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(ipStorageKey) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveIp(ip) {
+      const normalized = ip.trim();
+      if (!normalized) return;
+      const history = [normalized, ...getIpHistory().filter(item => item !== normalized)].slice(0, 20);
+      localStorage.setItem(ipStorageKey, JSON.stringify(history));
+      renderIpHistory();
+    }
+
+    function renderIpHistory() {
+      const datalist = document.getElementById("ipHistory");
+      datalist.innerHTML = "";
+      for (const ip of getIpHistory()) {
+        const option = document.createElement("option");
+        option.value = ip;
+        datalist.appendChild(option);
+      }
+    }
+
+    function clearIpHistory() {
+      localStorage.removeItem(ipStorageKey);
+      renderIpHistory();
+      setStatus("IP 记忆已清空");
+    }
+
+    function selectedDevices() {
+      return Array.from(document.querySelectorAll("[name='device']:checked:not(:disabled)"))
+        .map(item => item.value);
+    }
+
+    function getStoredSelectedDevices() {
+      try {
+        const raw = localStorage.getItem(selectedDevicesStorageKey) || "[]";
+        const items = JSON.parse(raw);
+        if (!Array.isArray(items)) return [];
+        return items.map(s => String(s)).filter(Boolean);
+      } catch {
+        return [];
+      }
+    }
+
+    function setStoredSelectedDevices(serials) {
+      try {
+        localStorage.setItem(selectedDevicesStorageKey, JSON.stringify(serials));
+      } catch {
+        // ignore
+      }
+    }
+
+    function selectAllDevices() {
+      document.querySelectorAll("[name='device']:not(:disabled)").forEach(item => {
+        item.checked = true;
+      });
+      clearDeviceListError();
+      setStoredSelectedDevices(selectedDevices());
+    }
+
+    function clearDeviceSearch() {
+      if (deviceSearch) deviceSearch.value = "";
+      if (deviceFilter) deviceFilter.value = "all";
+      renderDevices(allDevicesCache);
+    }
+
+    function toggleUnavailableDevices() {
+      showUnavailableDevices = !showUnavailableDevices;
+      renderDevices(allDevicesCache);
+      showToast(showUnavailableDevices ? "已显示不可用设备（未授权/离线）" : "已隐藏不可用设备", false);
+    }
+
+    function setFieldError(inputId, message) {
+      const input = document.getElementById(inputId);
+      if (!input) return false;
+      input.classList.add("input-invalid");
+      let err = document.getElementById(`${inputId}Error`);
+      if (!err) {
+        err = document.createElement("p");
+        err.id = `${inputId}Error`;
+        err.className = "field-error";
+        err.setAttribute("role", "alert");
+        input.insertAdjacentElement("afterend", err);
+      }
+      err.textContent = message;
+      err.hidden = false;
+      input.scrollIntoView({ behavior: "smooth", block: "center" });
+      input.focus({ preventScroll: true });
+      return false;
+    }
+
+    function clearFieldError(inputId) {
+      const input = document.getElementById(inputId);
+      if (input) input.classList.remove("input-invalid");
+      const err = document.getElementById(`${inputId}Error`);
+      if (err) err.hidden = true;
+    }
+
+    function clearDeviceListError() {
+      deviceList.classList.remove("input-invalid");
+      const err = document.getElementById("deviceListError");
+      if (err) err.hidden = true;
+    }
+
+    function clearAllFieldErrors() {
+      document.querySelectorAll(".input-invalid").forEach(el => el.classList.remove("input-invalid"));
+      document.querySelectorAll(".field-error").forEach(el => { el.hidden = true; });
+      clearDeviceListError();
+    }
+
+    function validateDevices() {
+      clearDeviceListError();
+      const ready = Array.from(document.querySelectorAll("[name='device']:checked:not(:disabled)"));
+      if (ready.length) return true;
+      deviceList.classList.add("input-invalid");
+      let err = document.getElementById("deviceListError");
+      if (!err) {
+        err = document.createElement("p");
+        err.id = "deviceListError";
+        err.className = "field-error";
+        err.setAttribute("role", "alert");
+        deviceList.insertAdjacentElement("afterend", err);
+      }
+      const hasUnavailable = document.querySelectorAll("[name='device']:disabled").length > 0;
+      err.textContent = hasUnavailable
+        ? "请至少选择一台「已连接」状态的设备；未授权或离线设备无法执行操作。"
+        : "请至少选择一台设备，或点击「刷新设备」检查连接。";
+      err.hidden = false;
+      deviceList.scrollIntoView({ behavior: "smooth", block: "center" });
+      setStatus(err.textContent, true);
+      return false;
+    }
+
+    function validateRequired(inputId, label) {
+      if (value(inputId)) {
+        clearFieldError(inputId);
+        return true;
+      }
+      setFieldError(inputId, `请填写${label}。`);
+      setStatus(`请填写${label}。`, true);
+      return false;
+    }
+
+    function validatePositiveNumber(inputId, label) {
+      const raw = value(inputId);
+      const num = Number(raw);
+      if (raw && Number.isFinite(num) && num > 0) {
+        clearFieldError(inputId);
+        return true;
+      }
+      setFieldError(inputId, `请填写有效的${label}（大于 0）。`);
+      setStatus(`请填写有效的${label}。`, true);
+      return false;
+    }
+
+    function deviceStateMeta(state) {
+      const normalized = String(state || "").toLowerCase();
+      if (normalized === "device") {
+        return { label: "已连接", badgeClass: "state-ok", itemClass: "state-ok", selectable: true };
+      }
+      if (normalized === "unauthorized") {
+        return { label: "未授权", badgeClass: "state-warn", itemClass: "state-warn", selectable: false };
+      }
+      if (normalized === "offline") {
+        return { label: "离线", badgeClass: "state-bad", itemClass: "state-bad", selectable: false };
+      }
+      return { label: state || "未知", badgeClass: "state-muted", itemClass: "state-muted", selectable: false };
+    }
+
+    function setStatus(text, isError = false) {
+      statusText.textContent = text;
+      statusText.className = `status ${isError ? "bad" : "ok"}`;
+    }
+
+    function hideLogEmpty() {
+      logEmpty.hidden = logOutput.children.length > 0;
+    }
+
+    function classifyLogEntry(title, data) {
+      if (title.includes("失败") || data.error) return "log-error";
+      if (title.includes("进度")) return "log-info";
+      if (data.results?.some(item => !item.ok)) return "log-error";
+      if (data.results?.length) return "log-success";
+      return "log-info";
+    }
+
+    function formatResultBody(data) {
+      if (data.results) {
+        return data.results.map(item => {
+          const state = item.ok ? "成功" : "失败";
+          const body = [item.stdout, item.stderr].filter(Boolean).join("\n").trim() || "(无输出)";
+          const cls = item.ok ? "ok" : "bad";
+          return `<div class="log-device ${cls}"><div class="log-device-title">[${escapeHtml(item.device)}] ${state}</div><pre class="log-entry-body" style="margin:0;padding:0;background:transparent;border:0">${escapeHtml(body)}</pre></div>`;
+        }).join("");
+      }
+      if (data.message && Object.keys(data).length <= 4) {
+        return escapeHtml(String(data.message));
+      }
+      return escapeHtml(JSON.stringify(data, null, 2));
+    }
+
+    function appendOutput(title, data) {
+      const entry = document.createElement("article");
+      entry.className = `log-entry ${classifyLogEntry(title, data)}`;
+      entry.innerHTML = `
+        <div class="log-entry-head">
+          <strong>${escapeHtml(title)}</strong>
+          <time>${new Date().toLocaleTimeString()}</time>
+        </div>
+        <div class="log-entry-body">${formatResultBody(data)}</div>
+      `;
+      logOutput.appendChild(entry);
+      hideLogEmpty();
+      entry.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function setOutput(title, text) {
+      logOutput.innerHTML = "";
+      liveOutputEntries.clear();
+      const entry = document.createElement("article");
+      entry.className = "log-entry log-info";
+      entry.innerHTML = `
+        <div class="log-entry-head">
+          <strong>${escapeHtml(title)}</strong>
+          <time>${new Date().toLocaleTimeString()}</time>
+        </div>
+        <pre class="log-entry-body">${escapeHtml(text)}</pre>
+      `;
+      logOutput.appendChild(entry);
+      hideLogEmpty();
+    }
+
+    function updateLiveOutput(key, title, statusLine, lines = [], isError = false) {
+      const isNearBottom = logPanelBody
+        ? logPanelBody.scrollHeight - logPanelBody.scrollTop - logPanelBody.clientHeight < 48
+        : false;
+      const nextLines = Array.isArray(lines) ? lines.map(line => String(line)) : String(lines).split("\n");
+      let live = liveOutputEntries.get(key);
+      if (!live || !logOutput.contains(live.entry)) {
+        const entry = document.createElement("article");
+        entry.className = `log-entry ${isError ? "log-error" : "log-info"}`;
+        entry.innerHTML = `
+          <div class="log-entry-head">
+            <strong>${escapeHtml(title)}</strong>
+            <time></time>
+          </div>
+          <div class="log-live-status"></div>
+          <pre class="log-entry-body log-live-lines"></pre>
+        `;
+        logOutput.appendChild(entry);
+        live = {
+          entry,
+          titleEl: entry.querySelector(".log-entry-head strong"),
+          timeEl: entry.querySelector(".log-entry-head time"),
+          statusEl: entry.querySelector(".log-live-status"),
+          bodyEl: entry.querySelector(".log-entry-body"),
+          lines: [],
+        };
+        liveOutputEntries.set(key, live);
+        live.timeEl.textContent = new Date().toLocaleTimeString();
+      }
+
+      live.entry.className = `log-entry ${isError ? "log-error" : "log-info"}`;
+      if (live.titleEl.textContent !== title) {
+        live.titleEl.textContent = title;
+      }
+      if (live.statusEl.textContent !== statusLine) {
+        live.statusEl.textContent = statusLine;
+      }
+      const previousLines = live.lines || [];
+      let common = 0;
+      const maxCommon = Math.min(previousLines.length, nextLines.length);
+      while (common < maxCommon && previousLines[common] === nextLines[common]) {
+        common += 1;
+      }
+      if (common === previousLines.length && nextLines.length >= previousLines.length) {
+        const appended = nextLines.slice(previousLines.length);
+        if (appended.length) {
+          live.bodyEl.textContent += `${live.bodyEl.textContent ? "\n" : ""}${appended.join("\n")}`;
+          live.timeEl.textContent = new Date().toLocaleTimeString();
+        }
+      } else if (common !== nextLines.length || nextLines.length !== previousLines.length) {
+        live.bodyEl.textContent = nextLines.join("\n");
+        live.timeEl.textContent = new Date().toLocaleTimeString();
+      }
+      live.lines = nextLines;
+      hideLogEmpty();
+      if (isNearBottom && logPanelBody) {
+        logPanelBody.scrollTop = logPanelBody.scrollHeight;
+      }
+    }
+
+    function clearOutput() {
+      logOutput.innerHTML = "";
+      liveOutputEntries.clear();
+      hideLogEmpty();
+      setStatus("输出已清空");
+    }
+
+    function scrollToOutput() {
+      resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    async function postJson(path, body = {}) {
+      setStatus("执行中...");
+      const response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const text = await response.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        const message = response.status === 404
+          ? `接口 ${path} 不存在，请重启 python app.py 后刷新页面。`
+          : `接口 ${path} 返回了非 JSON 内容，请检查后端服务是否已重启。`;
+        setStatus(message, true);
+        throw new Error(message);
+      }
+      if (!response.ok || data.ok === false) {
+        const message = data.error || data.stderr || "请求失败";
+        setStatus(message, true);
+        throw new Error(message);
+      }
+      setStatus("执行完成");
+      return data;
+    }
+
+    async function refreshDevices(button) {
+      await runWithButton(button, async () => {
+        try {
+          setStatus("刷新设备中...");
+          const response = await fetch("/api/devices");
+          const data = await response.json();
+          allDevicesCache = data.devices || [];
+          renderDevices(allDevicesCache);
+          appendOutput("设备列表", data);
+          setStatus(`发现 ${data.devices.length} 台设备`);
+        } catch (error) {
+          appendOutput("刷新设备失败", { error: error.message });
+          setStatus(error.message, true);
+        }
+      }, "刷新中…");
+    }
+
+    function renderDevices(devices) {
+      deviceList.innerHTML = "";
+      clearDeviceListError();
+      if (!devices.length) {
+        deviceList.innerHTML = "<p class='hint'>暂无设备，请确认 USB 调试已开启，或使用 IP 连接。</p>";
+        return;
+      }
+      const stored = getStoredSelectedDevices();
+      const storedSet = new Set(stored);
+      const searchText = (deviceSearch?.value || "").trim().toLowerCase();
+      const filterState = String(deviceFilter?.value || "all").toLowerCase();
+
+      const filtered = [];
+      for (const device of devices) {
+        const state = String(device.state || "").toLowerCase();
+        if (!showUnavailableDevices && state !== "device") continue;
+        if (filterState !== "all" && state !== filterState) continue;
+        const hay = `${device.serial || ""} ${device.details || ""}`.toLowerCase();
+        if (searchText && !hay.includes(searchText)) continue;
+        filtered.push(device);
+      }
+      if (!filtered.length) {
+        deviceList.innerHTML = "<p class='hint'>没有匹配的设备，请调整搜索/过滤条件。</p>";
+        return;
+      }
+
+      const hasStored = stored.length > 0;
+      for (const device of devices) {
+        if (!filtered.includes(device)) continue;
+        const meta = deviceStateMeta(device.state);
+        const label = document.createElement("label");
+        label.className = `device-item ${meta.itemClass}`;
+        const checked = meta.selectable && (hasStored ? storedSet.has(String(device.serial)) : true);
+        label.innerHTML = `
+          <input type="checkbox" name="device" value="${escapeHtml(device.serial)}"
+            ${checked ? "checked" : ""} ${meta.selectable ? "" : "disabled"}>
+          <span>
+            <div class="device-row-title">
+              <strong>${escapeHtml(device.serial)}</strong>
+              <span class="device-badge ${meta.badgeClass}">${escapeHtml(meta.label)}</span>
+            </div>
+            <div class="device-meta">${escapeHtml(device.details || "")}</div>
+          </span>
+        `;
+        label.querySelector("input").addEventListener("change", () => {
+          clearDeviceListError();
+          setStoredSelectedDevices(selectedDevices());
+        });
+        deviceList.appendChild(label);
+      }
+      setStoredSelectedDevices(selectedDevices());
+    }
+
+    function getDeviceGroups() {
+      try {
+        const raw = localStorage.getItem(deviceGroupsStorageKey) || "[]";
+        const groups = JSON.parse(raw);
+        if (!Array.isArray(groups)) return [];
+        return groups
+          .filter(g => g && typeof g === "object")
+          .map(g => ({
+            name: String(g.name || "").trim(),
+            serials: Array.isArray(g.serials) ? g.serials.map(s => String(s)).filter(Boolean) : [],
+            createdAt: Number(g.createdAt || 0),
+          }))
+          .filter(g => g.name && g.serials.length);
+      } catch {
+        return [];
+      }
+    }
+
+    function setDeviceGroups(groups) {
+      try {
+        localStorage.setItem(deviceGroupsStorageKey, JSON.stringify(groups));
+      } catch {
+        // ignore
+      }
+    }
+
+    function renderDeviceGroups() {
+      if (!deviceGroupList) return;
+      const groups = getDeviceGroups();
+      if (!groups.length) {
+        deviceGroupList.innerHTML = "<p class='hint' style='margin:6px 0 0'>暂无分组，勾选设备后点击“保存分组”。</p>";
+        return;
+      }
+      deviceGroupList.innerHTML = "";
+      for (const group of groups) {
+        const el = document.createElement("div");
+        el.className = "chip";
+        el.innerHTML = `
+          <span>${escapeHtml(group.name)}</span>
+          <button type="button" class="secondary small" data-action="apply">勾选</button>
+          <button type="button" class="secondary small danger" data-action="delete">删除</button>
+        `;
+        el.querySelector("[data-action='apply']").addEventListener("click", () => applyDeviceGroup(group.name));
+        el.querySelector("[data-action='delete']").addEventListener("click", () => deleteDeviceGroup(group.name));
+        deviceGroupList.appendChild(el);
+      }
+    }
+
+    function saveDeviceGroup() {
+      const name = value("deviceGroupName");
+      const serials = selectedDevices();
+      if (!name) {
+        showToast("请填写分组名称。", true);
+        return;
+      }
+      if (!serials.length) {
+        showToast("请先勾选至少一台已连接设备再保存分组。", true);
+        return;
+      }
+      const groups = getDeviceGroups().filter(g => g.name !== name);
+      groups.unshift({ name, serials, createdAt: Date.now() });
+      setDeviceGroups(groups.slice(0, 10));
+      document.getElementById("deviceGroupName").value = "";
+      renderDeviceGroups();
+      showToast(`已保存分组：${name}（${serials.length} 台）`, false);
+    }
+
+    function applyDeviceGroup(name) {
+      const group = getDeviceGroups().find(g => g.name === name);
+      if (!group) return;
+      const want = new Set(group.serials);
+      document.querySelectorAll("[name='device']").forEach(input => {
+        if (input.disabled) return;
+        input.checked = want.has(input.value);
+      });
+      clearDeviceListError();
+      setStoredSelectedDevices(selectedDevices());
+      showToast(`已勾选分组：${name}`, false);
+    }
+
+    function deleteDeviceGroup(name) {
+      const groups = getDeviceGroups().filter(g => g.name !== name);
+      setDeviceGroups(groups);
+      renderDeviceGroups();
+      showToast(`已删除分组：${name}`, false);
+    }
+
+    function getChartPresets() {
+      try {
+        const raw = localStorage.getItem(chartPresetStorageKey) || "[]";
+        const presets = JSON.parse(raw);
+        if (!Array.isArray(presets)) return [];
+        return presets
+          .filter(p => p && typeof p === "object")
+          .map(p => ({ name: String(p.name || "").trim(), config: p.config || {}, createdAt: Number(p.createdAt || 0) }))
+          .filter(p => p.name && p.config);
+      } catch {
+        return [];
+      }
+    }
+
+    function setChartPresets(presets) {
+      try {
+        localStorage.setItem(chartPresetStorageKey, JSON.stringify(presets));
+      } catch {
+        // ignore
+      }
+    }
+
+    function currentChartConfig() {
+      return {
+        chartMemoryMode: value("chartMemoryMode"),
+        chartCpuMode: value("chartCpuMode"),
+        chartMemoryThreshold: value("chartMemoryThreshold"),
+        chartCpuThreshold: value("chartCpuThreshold"),
+        chartSampleInterval: value("chartSampleInterval"),
+        chartSampleDuration: value("chartSampleDuration"),
+        chartMaxPoints: value("chartMaxPoints"),
+        chartStatsDir: value("chartStatsDir"),
+      };
+    }
+
+    function applyChartConfig(config) {
+      const setIf = (id, v) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (v === undefined || v === null) return;
+        el.value = String(v);
+      };
+      setIf("chartMemoryMode", config.chartMemoryMode);
+      setIf("chartCpuMode", config.chartCpuMode);
+      setIf("chartMemoryThreshold", config.chartMemoryThreshold);
+      setIf("chartCpuThreshold", config.chartCpuThreshold);
+      setIf("chartSampleInterval", config.chartSampleInterval);
+      setIf("chartSampleDuration", config.chartSampleDuration);
+      setIf("chartMaxPoints", config.chartMaxPoints);
+      setIf("chartStatsDir", config.chartStatsDir);
+      updateChartPointEstimate();
+    }
+
+    function renderChartPresetSelect() {
+      if (!chartPresetSelect) return;
+      const presets = getChartPresets();
+      chartPresetSelect.innerHTML = "";
+      const option0 = document.createElement("option");
+      option0.value = "";
+      option0.textContent = presets.length ? "选择预设…" : "暂无预设";
+      chartPresetSelect.appendChild(option0);
+      for (const preset of presets) {
+        const opt = document.createElement("option");
+        opt.value = preset.name;
+        opt.textContent = preset.name;
+        chartPresetSelect.appendChild(opt);
+      }
+    }
+
+    function saveChartPreset() {
+      const name = value("chartPresetName");
+      if (!name) {
+        showToast("请填写预设名称。", true);
+        return;
+      }
+      const config = currentChartConfig();
+      const presets = getChartPresets().filter(p => p.name !== name);
+      presets.unshift({ name, config, createdAt: Date.now() });
+      setChartPresets(presets.slice(0, 20));
+      document.getElementById("chartPresetName").value = "";
+      renderChartPresetSelect();
+      if (chartPresetSelect) chartPresetSelect.value = name;
+      showToast(`已保存曲线预设：${name}`, false);
+    }
+
+    function loadChartPreset() {
+      const name = chartPresetSelect?.value || "";
+      if (!name) {
+        showToast("请先选择要加载的预设。", true);
+        return;
+      }
+      const preset = getChartPresets().find(p => p.name === name);
+      if (!preset) {
+        showToast("未找到该预设，可能已被删除。", true);
+        renderChartPresetSelect();
+        return;
+      }
+      applyChartConfig(preset.config);
+      try { localStorage.setItem(chartLastConfigStorageKey, JSON.stringify(preset.config)); } catch {}
+      showToast(`已加载预设：${name}`, false);
+    }
+
+    function deleteChartPreset() {
+      const name = chartPresetSelect?.value || "";
+      if (!name) {
+        showToast("请先选择要删除的预设。", true);
+        return;
+      }
+      const next = getChartPresets().filter(p => p.name !== name);
+      setChartPresets(next);
+      renderChartPresetSelect();
+      showToast(`已删除预设：${name}`, false);
+    }
+
+    function restoreLastChartConfig() {
+      try {
+        const raw = localStorage.getItem(chartLastConfigStorageKey);
+        if (!raw) return;
+        const config = JSON.parse(raw);
+        if (!config || typeof config !== "object") return;
+        applyChartConfig(config);
+      } catch {
+        // ignore
+      }
+    }
+
+    function ensureDevices() {
+      if (!validateDevices()) {
+        throw new Error("请至少选择一台已连接的设备。");
+      }
+      return selectedDevices();
+    }
+
+    function payload(extra = {}) {
+      return { devices: ensureDevices(), ...extra };
+    }
+
+    function value(id) {
+      return document.getElementById(id).value.trim();
+    }
+
+    function selectedOptions(id) {
+      return Array.from(document.getElementById(id).selectedOptions).map(option => option.value);
+    }
+
+    function updateMonkeySelectedOptions() {
+      const selected = selectedMonkeyOptions();
+      monkeySelectedOptionsText.textContent = selected.length
+        ? `已选择：${selected.join("，")}`
+        : "未选择常用参数。";
+    }
+
+    function validateAppPackage() {
+      const pkg = appPackageValue();
+      if (pkg) {
+        setAppPackage(pkg, false);
+        clearFieldError("appPackage");
+        clearFieldError("appMemPackage");
+        clearFieldError("appCpuPackage");
+        return true;
+      }
+      setFieldError("appPackage", "请填写 APP 包名（可在侧栏「常用 APP 包名」输入）。");
+      setStatus("请填写 APP 包名。", true);
+      return false;
+    }
+
+    async function guarded(title, action, scrollAfter = false, button = null) {
+      const run = async () => {
+        try {
+          const data = await action();
+          appendOutput(title, data);
+          if (/APP|包名/.test(title)) {
+            const pkg = appPackageValue();
+            if (pkg) savePackageHistory(pkg);
+          }
+        } catch (error) {
+          appendOutput(`${title}失败`, { error: error.message });
+        } finally {
+          if (scrollAfter) scrollToOutput();
+        }
+      };
+      await runWithButton(button, run);
+    }
+
+    async function connectIp(button) {
+      if (!validateRequired("deviceIp", "设备 IP")) return;
+      await guarded("IP 连接", async () => {
+        const ip = value("deviceIp");
+        const data = await postJson("/api/connect-ip", { ip });
+        saveIp(ip);
+        renderDevices(data.devices || []);
+        return data;
+      }, false, button);
+    }
+
+    function runProcessMemory(button) {
+      if (!validateDevices() || !validateRequired("processName", "系统进程名称")) return;
+      guarded("系统进程内存", () => postJson("/api/process-memory", payload({ process: value("processName") })), true, button);
+    }
+
+    function runAppMemory(button) {
+      if (!validateDevices() || !validateAppPackage()) return;
+      const pkg = appPackageValue();
+      guarded("APP 内存", () => postJson("/api/app-memory", payload({ package: pkg })), true, button);
+    }
+
+    function runAppCpu(button) {
+      if (!validateDevices() || !validateAppPackage()) return;
+      const pkg = appPackageValue();
+      guarded("APP CPU", () => postJson("/api/app-cpu", payload({ package: pkg })), true, button);
+    }
+
+    function runTotalCpu(button) {
+      if (!validateDevices()) return;
+      guarded("CPU 总占用率", () => postJson("/api/total-cpu", payload()), true, button);
+    }
+
+    function runAppAndTotalCpu(button) {
+      if (!validateDevices() || !validateAppPackage()) return;
+      const pkg = appPackageValue();
+      guarded("APP CPU + CPU 总占用率", () => postJson("/api/app-total-cpu", payload({ package: pkg })), true, button);
+    }
+
+    function openStatsPage(options) {
+      clearAllFieldErrors();
+      if (!validateDevices()) return;
+      const devices = selectedDevices();
+      let valid = false;
+      if (options.cpuMode === "total" && !options.memoryTarget) {
+        valid = true;
+      }
+      if (options.memoryTarget) valid = true;
+      if (options.cpuPackage && (options.cpuMode === "app" || options.cpuMode === "both")) valid = true;
+      if (!valid) {
+        const message = "请至少配置内存抓取目标，或选择 CPU 总占用 / 填写 APP 包名。";
+        if (value("chartMemoryMode") === "process") {
+          setFieldError("processName", "请填写系统进程名称，或调整曲线抓取类型。");
+        } else if (value("chartMemoryMode") !== "none") {
+          setFieldError("appPackage", "请填写 APP 包名，或选择「不抓取内存」。");
+        } else {
+          setFieldError("appPackage", message);
+        }
+        setStatus(message, true);
+        return;
+      }
+      if ((options.cpuMode === "app" || options.cpuMode === "both") && !options.cpuPackage) {
+        setFieldError("appPackage", "选择 APP CPU 时请填写 APP 包名。");
+        setStatus("选择 APP CPU 时请填写 APP 包名。", true);
+        return;
+      }
+      if (options.memoryMode === "process" && options.memoryTarget && !value("processName")) {
+        setFieldError("processName", "系统进程内存模式需要填写进程名称。");
+        return;
+      }
+      if (options.memoryMode === "app" && options.memoryTarget && !appPackageValue()) {
+        setFieldError("appPackage", "APP 内存模式需要填写 APP 包名。");
+        return;
+      }
+      if (options.cpuPackage) savePackageHistory(options.cpuPackage);
+      const params = new URLSearchParams();
+      params.set("devices", devices.join(","));
+      if (options.memoryMode) params.set("memoryMode", options.memoryMode);
+      if (options.memoryTarget) params.set("memoryTarget", options.memoryTarget);
+      if (options.cpuPackage) params.set("cpuPackage", options.cpuPackage);
+      if (options.cpuMode) params.set("cpuMode", options.cpuMode);
+      if (options.memoryThreshold) params.set("memoryThreshold", options.memoryThreshold);
+      if (options.cpuThreshold) params.set("cpuThreshold", options.cpuThreshold);
+      if (options.intervalSec) params.set("intervalMs", String(Number(options.intervalSec) * 1000));
+      if (options.durationSec) params.set("durationSec", options.durationSec);
+      if (options.maxPoints) params.set("maxPoints", options.maxPoints);
+      if (options.outputDir) params.set("outputDir", options.outputDir);
+      window.open(`/stats.html?${params.toString()}`, "_blank");
+    }
+
+    function openPerformanceChart(button) {
+      runWithButton(button, async () => {
+        clearAllFieldErrors();
+        if (!validatePositiveNumber("chartMaxPoints", "最多保留点数")) return;
+        const chartMode = value("chartMemoryMode");
+        let cpuMode = value("chartCpuMode");
+        const shouldCaptureMemory = chartMode !== "none";
+        const pkg = appPackageValue();
+        if (pkg) setAppPackage(pkg, true);
+
+        let memoryMode = chartMode === "process" ? "process" : "app";
+        let memoryTarget = chartMode === "process"
+          ? value("processName")
+          : (shouldCaptureMemory ? pkg : "");
+
+        // UX: allow quick open without filling package/process by gracefully downgrading.
+        if (chartMode === "process" && !memoryTarget) {
+          memoryMode = "app";
+          memoryTarget = "";
+          showToast("未填写进程名称，已自动改为不抓取内存（仅抓取 CPU）。", true);
+        }
+        if (chartMode !== "none" && chartMode !== "process" && shouldCaptureMemory && !pkg) {
+          memoryTarget = "";
+          showToast("未填写 APP 包名，已自动改为不抓取内存（仅抓取 CPU）。", true);
+        }
+
+        const wantsAppCpu = cpuMode === "app" || cpuMode === "both";
+        const canAppCpu = Boolean(pkg);
+        let cpuPackage = wantsAppCpu && canAppCpu ? pkg : "";
+        if (wantsAppCpu && !canAppCpu) {
+          cpuMode = "total";
+          cpuPackage = "";
+          showToast("未填写 APP 包名，已自动改为只抓取 CPU 总占用率。", true);
+        }
+
+        if (memoryTarget === "" && cpuMode === "none") {
+          setStatus("请至少选择一种抓取类型（内存或 CPU）。", true);
+          showToast("请至少选择一种抓取类型（内存或 CPU）。", true);
+          return;
+        }
+
+        // Persist last-used chart config for next visit.
+        try { localStorage.setItem(chartLastConfigStorageKey, JSON.stringify(currentChartConfig())); } catch {}
+
+        openStatsPage({
+          memoryMode,
+          memoryTarget,
+          cpuPackage,
+          cpuMode,
+          memoryThreshold: value("chartMemoryThreshold"),
+          cpuThreshold: value("chartCpuThreshold"),
+          intervalSec: value("chartSampleInterval"),
+          durationSec: value("chartSampleDuration"),
+          maxPoints: value("chartMaxPoints") || "7200",
+          outputDir: value("chartStatsDir"),
+        });
+      }, "打开中…");
+    }
+
+    async function refreshAdbStatus() {
+      try {
+        const response = await fetch("/api/adb-status");
+        const data = await response.json();
+        adbBanner.hidden = false;
+        if (!response.ok || !data.available) {
+          adbBanner.className = "adb-banner error";
+          adbBannerText.textContent = data.message || data.error || "ADB 不可用，请安装 platform-tools 并加入 PATH。";
+          return;
+        }
+        adbBanner.className = data.readyDeviceCount > 0 ? "adb-banner ok" : "adb-banner warn";
+        adbBannerText.textContent = data.message || data.version || "ADB 已就绪";
+      } catch (error) {
+        adbBanner.hidden = false;
+        adbBanner.className = "adb-banner error";
+        adbBannerText.textContent = `无法检测 ADB：${error.message}`;
+      }
+    }
+
+    async function runFillMemory() {
+      if (!validateDevices()
+        || !validateRequired("fillPath", "设备路径")
+        || !validateRequired("fillName", "文件名称")
+        || !validatePositiveNumber("fillSize", "填充大小（MB）")) {
+        return;
+      }
+      try {
+        setButtonLoading(fillButton, true, "填充中…");
+        fillProgressBar.style.width = "0%";
+        fillProgressText.textContent = "正在启动内存填充任务...";
+        const data = await postJson("/api/fill-memory-start", payload({
+          remotePath: value("fillPath"),
+          filename: value("fillName"),
+          sizeMb: Number(value("fillSize")),
+        }));
+        fillSessionId = data.session.sessionId;
+        setStoredSession("fill", fillSessionId);
+        setTaskCancelVisible(fillCancelButton, true);
+        await pollFillStatus(fillSessionId);
+      } catch (error) {
+        appendOutput("设备内存填充失败", { error: error.message });
+        fillProgressText.textContent = error.message;
+        setStatus(error.message, true);
+        setButtonLoading(fillButton, false);
+        setTaskCancelVisible(fillCancelButton, false);
+        fillSessionId = "";
+        setStoredSession("fill", "");
+      }
+    }
+
+    async function cancelFillMemory() {
+      if (!fillSessionId) return;
+      try {
+        fillCancelButton.disabled = true;
+        const data = await postJson("/api/fill-memory-cancel", { sessionId: fillSessionId });
+        renderFillProgress(data.session);
+        showToast(data.session.message || "已请求取消内存填充", false);
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        fillCancelButton.disabled = false;
+      }
+    }
+
+    async function pollFillStatus(sessionId) {
+      const data = await postJson("/api/fill-memory-status", { sessionId });
+      renderFillProgress(data.session);
+      if (data.session.running) {
+        window.setTimeout(() => pollFillStatus(sessionId).catch(error => {
+          appendOutput("查询填充进度失败", { error: error.message });
+          setButtonLoading(fillButton, false);
+          setTaskCancelVisible(fillCancelButton, false);
+          fillSessionId = "";
+          setStoredSession("fill", "");
+        }), 1000);
+        return;
+      }
+      setButtonLoading(fillButton, false);
+      setTaskCancelVisible(fillCancelButton, false);
+      fillSessionId = "";
+      setStoredSession("fill", "");
+      setStatus(data.session.message, !data.session.ok);
+      appendOutput("设备内存填充完成", { message: data.session.message });
+      showToast(data.session.message, !data.session.ok);
+    }
+
+    function renderFillProgress(session) {
+      const percent = Number(session.percent || 0);
+      fillProgressBar.style.width = `${percent}%`;
+      const current = session.currentDevice ? `，当前设备：${session.currentDevice}` : "";
+      fillProgressText.textContent = `${session.message} · ${session.done}/${session.total} · ${percent}%${current}`;
+      setStatus(fillProgressText.textContent, !session.ok && !session.running);
+      updateLiveOutput(
+        "fill",
+        "设备内存填充实时日志",
+        fillProgressText.textContent,
+        session.logs || [],
+        !session.ok && !session.running
+      );
+    }
+
+    async function runInstallApks() {
+      if (!validateDevices() || !validateRequired("apkDir", "APK 存放路径")) return;
+      try {
+        setButtonLoading(installButton, true, "安装中…");
+        installProgressBar.style.width = "0%";
+        installProgressText.textContent = "正在启动安装任务...";
+        const data = await postJson("/api/install-apks-start", payload({ apkDir: value("apkDir") }));
+        installSessionId = data.session.sessionId;
+        setStoredSession("install", "");
+        setTaskCancelVisible(installCancelButton, true);
+        await pollInstallStatus(installSessionId);
+      } catch (error) {
+        appendOutput("批量安装 APK 失败", { error: error.message });
+        installProgressText.textContent = error.message;
+        setStatus(error.message, true);
+        setButtonLoading(installButton, false);
+        setTaskCancelVisible(installCancelButton, false);
+        installSessionId = "";
+        setStoredSession("install", "");
+      }
+    }
+
+    async function cancelInstallApks() {
+      if (!installSessionId) return;
+      try {
+        installCancelButton.disabled = true;
+        const data = await postJson("/api/install-apks-cancel", { sessionId: installSessionId });
+        renderInstallProgress(data.session);
+        showToast(data.session.message || "已请求取消安装", false);
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        installCancelButton.disabled = false;
+      }
+    }
+
+    async function pollInstallStatus(sessionId) {
+      const data = await postJson("/api/install-apks-status", { sessionId });
+      renderInstallProgress(data.session);
+      if (data.session.running) {
+        window.setTimeout(() => pollInstallStatus(sessionId).catch(error => {
+          appendOutput("查询安装进度失败", { error: error.message });
+          setButtonLoading(installButton, false);
+          setTaskCancelVisible(installCancelButton, false);
+          installSessionId = "";
+          setStoredSession("install", "");
+        }), 1000);
+        return;
+      }
+      setButtonLoading(installButton, false);
+      setTaskCancelVisible(installCancelButton, false);
+      installSessionId = "";
+      setStoredSession("install", "");
+      setStatus(data.session.message, !data.session.ok);
+      appendOutput("批量安装 APK 完成", { message: data.session.message });
+      showToast(data.session.message, !data.session.ok);
+    }
+
+    function renderInstallProgress(session) {
+      const percent = Number(session.percent || 0);
+      installProgressBar.style.width = `${percent}%`;
+      const current = session.currentApk
+        ? `，当前：${session.currentDevice} / ${session.currentApk}`
+        : "";
+      installProgressText.textContent = `${session.message} · ${session.done}/${session.total} · ${percent}%${current}`;
+      setStatus(installProgressText.textContent, !session.ok && !session.running);
+      updateLiveOutput(
+        "install",
+        "批量安装 APK 实时日志",
+        installProgressText.textContent,
+        session.logs || [],
+        !session.ok && !session.running
+      );
+    }
+
+    async function runMonkeyTest() {
+      if (!validateDevices() || !validateRequired("monkeyTestPackages", "被测 APP 包名")) return;
+      try {
+        setButtonLoading(monkeyButton, true, "Monkey 中…");
+        monkeyProgressBar.style.width = "0%";
+        monkeyProgressText.textContent = "正在启动 Monkey 测试...";
+        const data = await postJson("/api/monkey-start", payload({
+          testPackages: value("monkeyTestPackages"),
+          excludePackages: value("monkeyExcludePackages"),
+          eventCount: Number(value("monkeyEventCount")),
+          throttle: Number(value("monkeyThrottle")),
+          pctSyskeys: Number(value("monkeyPctSyskeys")),
+          pctTouch: Number(value("monkeyPctTouch")),
+          seed: value("monkeySeed"),
+          selectedOptions: selectedMonkeyOptions(),
+          extraArgs: value("monkeyExtraArgs"),
+          outputDir: value("monkeyOutputDir"),
+        }));
+        monkeySessionId = data.session.sessionId;
+        setStoredSession("monkey", monkeySessionId);
+        setTaskCancelVisible(monkeyCancelButton, true);
+        await pollMonkeyStatus(monkeySessionId);
+      } catch (error) {
+        appendOutput("Monkey 测试失败", { error: error.message });
+        monkeyProgressText.textContent = error.message;
+        setStatus(error.message, true);
+        setButtonLoading(monkeyButton, false);
+        setTaskCancelVisible(monkeyCancelButton, false);
+        monkeySessionId = "";
+        setStoredSession("monkey", "");
+      }
+    }
+
+    async function cancelMonkeyTest() {
+      if (!monkeySessionId) return;
+      try {
+        monkeyCancelButton.disabled = true;
+        const data = await postJson("/api/monkey-cancel", { sessionId: monkeySessionId });
+        renderMonkeyProgress(data.session);
+        showToast(data.session.message || "已请求取消 Monkey", false);
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        monkeyCancelButton.disabled = false;
+      }
+    }
+
+    async function pollMonkeyStatus(sessionId) {
+      const data = await postJson("/api/monkey-status", { sessionId });
+      renderMonkeyProgress(data.session);
+      if (data.session.running) {
+        window.setTimeout(() => pollMonkeyStatus(sessionId).catch(error => {
+          appendOutput("查询 Monkey 进度失败", { error: error.message });
+          setButtonLoading(monkeyButton, false);
+          setTaskCancelVisible(monkeyCancelButton, false);
+          monkeySessionId = "";
+          setStoredSession("monkey", "");
+        }), 1000);
+        return;
+      }
+      setButtonLoading(monkeyButton, false);
+      setTaskCancelVisible(monkeyCancelButton, false);
+      monkeySessionId = "";
+      setStoredSession("monkey", "");
+      setStatus(data.session.message, !data.session.ok);
+      appendOutput("Monkey 测试完成", {
+        message: data.session.message,
+        crashCount: data.session.crashCount,
+        anrCount: data.session.anrCount,
+        logFiles: data.session.logFiles,
+      });
+      showToast(data.session.message, !data.session.ok);
+    }
+
+    async function resumeLongTasks() {
+      installSessionId = "";
+      setStoredSession("install", "");
+
+      const storedFill = getStoredSession("fill");
+      if (storedFill) {
+        fillSessionId = storedFill;
+        fillProgressText.textContent = "检测到上次内存填充任务，正在恢复进度...";
+        setTaskCancelVisible(fillCancelButton, true);
+        pollFillStatus(fillSessionId).catch(error => {
+          setTaskCancelVisible(fillCancelButton, false);
+          fillSessionId = "";
+          setStoredSession("fill", "");
+          appendOutput("恢复内存填充任务失败", { error: error.message });
+        });
+      }
+
+      const storedMonkey = getStoredSession("monkey");
+      if (storedMonkey) {
+        monkeySessionId = storedMonkey;
+        monkeyProgressText.textContent = "检测到上次 Monkey 任务，正在恢复进度...";
+        setTaskCancelVisible(monkeyCancelButton, true);
+        pollMonkeyStatus(monkeySessionId).catch(error => {
+          setTaskCancelVisible(monkeyCancelButton, false);
+          monkeySessionId = "";
+          setStoredSession("monkey", "");
+          appendOutput("恢复 Monkey 任务失败", { error: error.message });
+        });
+      }
+    }
+
+    function renderMonkeyProgress(session) {
+      const percent = Number(session.percent || 0);
+      monkeyProgressBar.style.width = `${percent}%`;
+      const current = session.currentDevice ? `，当前设备：${session.currentDevice}` : "";
+      monkeyProgressText.textContent = `${session.message} · ${session.done}/${session.total} · ${percent}%${current} · Crash ${session.crashCount} · ANR ${session.anrCount}`;
+      setStatus(monkeyProgressText.textContent, !session.ok && !session.running);
+      const anomalies = (session.anomalies || []).map(item => `${item.time} [${item.device}] ${item.type}: ${item.line}`);
+      updateLiveOutput("monkey", "Monkey 测试实时日志", monkeyProgressText.textContent, [
+        "异常统计：",
+        ...(anomalies.length ? anomalies : ["暂无 Crash / ANR"]),
+        "",
+        "日志文件：",
+        ...((session.logFiles || []).length ? session.logFiles : ["暂无"]),
+        "",
+        "最近日志：",
+        ...(session.logs || []),
+      ].join("\n"), !session.ok && !session.running);
+    }
+
+    function runScreenSize(button) {
+      if (!validateDevices()) return;
+      guarded("屏幕分辨率", () => postJson("/api/screen-size", payload()), true, button);
+    }
+
+    function runScreenshot(button) {
+      if (!validateDevices()) return;
+      guarded("截图", () => postJson("/api/screenshot", payload({ outputDir: value("screenshotDir") })), false, button);
+    }
+
+    function startRecord(button) {
+      if (!validateDevices()) return;
+      guarded("开始录屏", () => postJson("/api/record-start", payload({ outputDir: value("recordDir") })), false, button);
+    }
+
+    function stopRecord(button) {
+      if (!validateDevices()) return;
+      guarded("停止录屏", () => postJson("/api/record-stop", payload()), false, button);
+    }
+
+    function runCurrentPackage(button) {
+      if (!validateDevices()) return;
+      guarded("当前应用包名", async () => {
+        const data = await postJson("/api/current-package", payload());
+        const text = (data.results || []).map(item => item.stdout || "").join("\n");
+        const match = text.match(/[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+/i);
+        if (match) setAppPackage(match[0], true);
+        return data;
+      }, true, button);
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    document.querySelectorAll("input, textarea, select").forEach(el => {
+      if (!el.id) return;
+      el.addEventListener("input", () => clearFieldError(el.id));
+      el.addEventListener("change", () => clearFieldError(el.id));
+    });
+
+    if (deviceSearch) {
+      deviceSearch.addEventListener("input", () => renderDevices(allDevicesCache));
+    }
+    if (deviceFilter) {
+      deviceFilter.addEventListener("change", () => renderDevices(allDevicesCache));
+    }
+
+    document.querySelectorAll("[name='monkeyOption']").forEach(el => {
+      el.addEventListener("change", updateMonkeySelectedOptions);
+    });
+
+    ["chartSampleInterval", "chartSampleDuration", "chartMaxPoints"].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", updateChartPointEstimate);
+      el.addEventListener("change", updateChartPointEstimate);
+    });
+
+    bindPackageSync();
+    renderIpHistory();
+    renderPackageHistory();
+    const lastPackage = getPackageHistory()[0];
+    if (lastPackage) setAppPackage(lastPackage, false);
+    updateMonkeySelectedOptions();
+    updateChartPointEstimate();
+    hideLogEmpty();
+    refreshDevices();
+    refreshAdbStatus();
+    window.setInterval(refreshAdbStatus, 30000);
+    resumeLongTasks();
+    renderDeviceGroups();
+    renderChartPresetSelect();
+    restoreLastChartConfig();
+  </script>
+</body>
+</html>
