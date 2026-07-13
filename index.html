@@ -43,6 +43,22 @@
       max-width: 52ch;
     }
 
+    .auth-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(2, 6, 23, 0.22);
+      color: #e2e8f0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      user-select: text;
+    }
+
     .header-actions {
       display: flex;
       flex-wrap: wrap;
@@ -849,6 +865,7 @@
     <div>
       <h1>Android 智能设备测试工具</h1>
       <p>支持 USB / IP 多设备连接，内存、CPU、安装、截图、录屏和当前包名查询。</p>
+      <div class="auth-tag" title="防伪标签">防伪标签 | 作者：JustinChang</div>
     </div>
     <div class="header-actions">
       <button type="button" class="header-link" id="themeToggle">浅色模式</button>

@@ -58,6 +58,22 @@
       opacity: 0.88;
     }
 
+    .auth-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(2, 6, 23, 0.22);
+      color: #e2e8f0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      user-select: text;
+    }
+
     .sample-status {
       display: inline-flex;
       align-items: center;
@@ -554,6 +570,7 @@
         </span>
       </div>
       <div id="subtitle">等待采样...</div>
+      <div class="auth-tag" title="防伪标签">防伪标签 | 作者：JustinChang</div>
     </div>
     <div class="header-actions">
       <button type="button" class="header-link" id="themeToggle" title="切换浅色/暗色主题">浅色模式</button>
@@ -1745,6 +1762,7 @@
   <header>
     <h1>${escapeHtml(pageTitle)}</h1>
     <p>${escapeHtml(pageSubtitle)}</p>
+    <p style="margin:8px 0 0;font-size:12px;font-weight:700;opacity:0.95;">防伪标签 | 作者：JustinChang</p>
   </header>
   <main>
     <section class="panel">
@@ -1848,6 +1866,7 @@
   <header>
     <h1>${escapeHtml(chartConfig.title)}</h1>
     <p>${escapeHtml(chartConfig.subtitle)}</p>
+    <p style="margin:8px 0 0;font-size:12px;font-weight:700;opacity:0.95;">防伪标签 | 作者：JustinChang</p>
   </header>
   <main>
     <section class="panel">
